@@ -1,0 +1,26 @@
+{
+  "name": "bodule-engine",
+  "version": "0.0.0",
+  "description": "bodule runtimer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bodule/bodule-engine.git"
+  },
+  "keywords": [
+    "commonjs",
+    "bodule",
+    "loader"
+  ],
+  "author": "island205@gmail.com",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "851194b29e8bd81155ee152fda9b0522d86bfe7b",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-coffee": "~0.7.0"
+  }
+}
