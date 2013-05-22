@@ -21,6 +21,7 @@
   "gitHead": "851194b29e8bd81155ee152fda9b0522d86bfe7b",
   "devDependencies": {
     "grunt": "~0.4.1",
-    "grunt-contrib-coffee": "~0.7.0"
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-contrib-watch": "~0.4.3"
   }
 }
