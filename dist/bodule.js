@@ -4,14 +4,39 @@
 
   Bodule = (function() {
 
-    function Bodule(id, parent) {
+    Bodule._cache = {};
+
+    Bodule.require = function(id) {
+      return this._cache[id].compile();
+    };
+
+    Bodule.define = function(id, deps, factory) {
+      var bodule;
+      bodule = new Bodule(id, deps, factory);
+      return this._cache[id] = bodule;
+    };
+
+    Bodule._load = function(request, parent) {
+      var bodule, caheBodule;
+      caheBodule = this._cache[request];
+      if (cacheBodule) {
+        return cacheBodule.exports;
+      }
+      bodule = new Bodule(request, parent);
+      bodule.load();
+      bodule.compile();
+      return bodule.exports;
+    };
+
+    function Bodule(id, deps, factory) {
       var _ref;
       this.id = id;
-      this.parent = parent;
+      this.deps = parent;
+      this.factory = factory;
       this.children = [];
       this.exports = {};
       this.loaded = false;
-      if (parent != null) {
+      if (typeof parent !== "undefined" && parent !== null) {
         if ((_ref = parent.children) != null) {
           _ref.push(this);
         }
@@ -26,7 +51,14 @@
 
     };
 
-    Bodule.prototype.compile = function() {};
+    Bodule.prototype.compile = function() {
+      var exports, module, require;
+      module = {};
+      exports = module.exports = this.exports;
+      require = Bodule.require;
+      this.factory(require, exports, module);
+      this.exports = module.exports;
+    };
 
     return Bodule;
 
