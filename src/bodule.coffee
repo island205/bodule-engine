@@ -2,7 +2,10 @@ class Bodule
     # Constructor
     constructor: (id, deps, factory) ->
         [@package, @version] = id.split '@'
-        [@version, noop] = @version.split '/'
+        @version = @version.split '/'
+        @path = @version.slice 1, @version.length
+        @version = @version[0]
+        @path = @path.join '/'
         @packageId = "#{@package}@#{@version}"
         @id = id
         @deps = deps
@@ -26,17 +29,25 @@ class Bodule
 
     @_load: (bodule, onload)->
         script = document.createElement 'script'
-        script.src = @config.host + '/' + bodule.replace('@', '/') + '.js'
+        src = @config.host + '/' + bodule.replace('@', '/') + '.js'
+        script.src = src
         script.onload = onload
         document.head.appendChild script
         return
+
+    @normalize: (path)->
+        path.replace /\/{2,}/g, '/'
+    @dirname: (path)->
+        path = path.split '/'
+        path = path[0...path.length - 1]
+        path.join '/'
 
     # Instance method
     load: ->
         self = @
         deps = @deps.map (dep) ->
             if dep.indexOf('@') == -1
-                dep = self.packageId + dep
+                dep = Bodule.normalize(self.packageId + '/' + Bodule.dirname(self.path) + '/' + dep)
             dep
         deps = deps.filter (dep)->
             !Bodule._cache[dep]
@@ -73,8 +84,10 @@ do ->
     window.define = ->
         Bodule.define.apply Bodule, arguments
     
-    define 'bodule@0.1.0/d', [], (require, exports, module)->
-        module.exports = 'd'
+    define 'bodule@0.1.0/d', ['basestone@0.0.1/src/basestone'], (require, exports, module)->
+        basestone = require 'basestone@0.0.1/src/basestone'
+        exports.d = 'd'
+        exports.basestone = basestone
         
     define 'bodule@0.1.0/c', ['/d', '/e'], (require, exports, module)->
         d = require '/d'

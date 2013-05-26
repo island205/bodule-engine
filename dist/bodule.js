@@ -3,10 +3,13 @@
 
   Bodule = (function() {
     function Bodule(id, deps, factory) {
-      var noop, _ref, _ref1;
+      var _ref;
 
       _ref = id.split('@'), this["package"] = _ref[0], this.version = _ref[1];
-      _ref1 = this.version.split('/'), this.version = _ref1[0], noop = _ref1[1];
+      this.version = this.version.split('/');
+      this.path = this.version.slice(1, this.version.length);
+      this.version = this.version[0];
+      this.path = this.path.join('/');
       this.packageId = "" + this["package"] + "@" + this.version;
       this.id = id;
       this.deps = deps;
@@ -34,12 +37,23 @@
     };
 
     Bodule._load = function(bodule, onload) {
-      var script;
+      var script, src;
 
       script = document.createElement('script');
-      script.src = this.config.host + '/' + bodule.replace('@', '/') + '.js';
+      src = this.config.host + '/' + bodule.replace('@', '/') + '.js';
+      script.src = src;
       script.onload = onload;
       document.head.appendChild(script);
+    };
+
+    Bodule.normalize = function(path) {
+      return path.replace(/\/{2,}/g, '/');
+    };
+
+    Bodule.dirname = function(path) {
+      path = path.split('/');
+      path = path.slice(0, path.length - 1);
+      return path.join('/');
     };
 
     Bodule.prototype.load = function() {
@@ -48,7 +62,7 @@
       self = this;
       deps = this.deps.map(function(dep) {
         if (dep.indexOf('@') === -1) {
-          dep = self.packageId + dep;
+          dep = Bodule.normalize(self.packageId + '/' + Bodule.dirname(self.path) + '/' + dep);
         }
         return dep;
       });
@@ -108,8 +122,12 @@
     window.define = function() {
       return Bodule.define.apply(Bodule, arguments);
     };
-    define('bodule@0.1.0/d', [], function(require, exports, module) {
-      return module.exports = 'd';
+    define('bodule@0.1.0/d', ['basestone@0.0.1/src/basestone'], function(require, exports, module) {
+      var basestone;
+
+      basestone = require('basestone@0.0.1/src/basestone');
+      exports.d = 'd';
+      return exports.basestone = basestone;
     });
     return define('bodule@0.1.0/c', ['/d', '/e'], function(require, exports, module) {
       var d, e;
