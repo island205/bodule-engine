@@ -1,4 +1,4 @@
-define('basestone@0.0.1/src/structure/set.js', ['../util', './map'], function (require, exports, module) {
+define('basestone@0.0.1/src/structure/set', ['../util', './map'], function (require, exports, module) {
     
     var
     util = require('../util').util,

@@ -1,4 +1,4 @@
-define('basestone@0.0.1/src/emitter.js', [], function (require, exports, module) {
+define('basestone@0.0.1/src/emitter', [], function (require, exports, module) {
     
     // exports.EventEmitter = require('events').EventEmitter
     var

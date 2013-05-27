@@ -1,4 +1,4 @@
-define('basestone@0.0.1/src/util.js', ['./lang/lang'], function (require, exports, module) {
+define('basestone@0.0.1/src/util', ['./lang/lang'], function (require, exports, module) {
     
     require('./lang/lang')
     var

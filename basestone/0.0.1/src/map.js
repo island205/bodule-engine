@@ -1,4 +1,4 @@
-define('basestone@0.0.1/src/map.js', ['./emitter', './structure/map', './util'], function (require, exports, module) {
+define('basestone@0.0.1/src/map', ['./emitter', './structure/map', './util'], function (require, exports, module) {
     
     var
     EventEmitter = require('./emitter').EventEmitter,
