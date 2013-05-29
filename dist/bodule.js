@@ -13,7 +13,6 @@
       this.path = this.path.join('/');
       this.packageId = "" + this["package"] + "@" + this.version;
       this.id = id;
-      console.log("new Bodule " + this.id);
       this.deps = deps;
       this.deps = this.deps.map(function(dep) {
         if (dep.indexOf('@') === -1) {
@@ -30,6 +29,8 @@
 
     Bodule._waitPool = {};
 
+    Bodule._loading = {};
+
     Bodule.config = function(config) {
       this.config = config;
     };
@@ -41,6 +42,7 @@
     Bodule.define = function(id, deps, factory) {
       var bodule;
 
+      console.log("define " + id);
       bodule = new Bodule(id, deps, factory);
       this._cache[id] = bodule;
       return bodule.load();
@@ -53,9 +55,12 @@
       if (waitList.indexOf(parent) === -1) {
         waitList.push(parent);
       }
+      if (!!this._loading[bodule]) {
+        return;
+      }
+      this._loading[bodule] = true;
       if (!Bodule._cache[bodule]) {
         script = document.createElement('script');
-        console.log("load module " + bodule);
         src = this.config.host + '/' + bodule.replace('@', '/') + '.js';
         script.src = src;
         document.head.appendChild(script);
@@ -76,8 +81,21 @@
     };
 
     Bodule.normalize = function(path) {
-      path.replace(/\/\.\//g, '/');
-      return path.replace(/\/{2,}/g, '/');
+      var toPath, top;
+
+      path = path.replace(/\/\.\//g, '/');
+      path = path.replace(/\/{2,}/g, '/');
+      path = path.split('/');
+      toPath = [];
+      while (path.length > 0) {
+        top = path.pop();
+        if (top === '..') {
+          path.pop();
+        } else {
+          toPath.unshift(top);
+        }
+      }
+      return toPath.join('/');
     };
 
     Bodule.dirname = function(path) {
@@ -106,11 +124,10 @@
     Bodule.prototype.check = function() {
       var deps;
 
-      console.log("check " + this.id);
       deps = this.deps.filter(function(dep) {
         return !Bodule._cache[dep] || !Bodule._cache[dep].compiled;
       });
-      if (!deps.length) {
+      if (!deps.length && !this.compiled) {
         return this.compile();
       }
     };
@@ -158,9 +175,7 @@
 
       d = require('./d');
       e = require('./e');
-      return exports.cfunc = function() {
-        return console.log(d);
-      };
+      return exports.cfunc = function() {};
     });
   })();
 

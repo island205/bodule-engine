@@ -9,7 +9,6 @@ class Bodule
         @path = @path.join '/'
         @packageId = "#{@package}@#{@version}"
         @id = id
-        console.log "new Bodule #{@id}"
         @deps = deps
         @deps = @deps.map (dep) ->
             if dep.indexOf('@') == -1
@@ -22,6 +21,7 @@ class Bodule
     # Bodule property
     @_cache: {},
     @_waitPool : {},
+    @_loading : {},
 
     # Bodule method
     @config: (@config)->
@@ -30,6 +30,7 @@ class Bodule
         @_cache[id].exports
 
     @define: (id, deps, factory)->
+        console.log "define #{id}"
         bodule = new Bodule(id, deps, factory)
         @_cache[id] = bodule
         bodule.load()
@@ -38,9 +39,10 @@ class Bodule
         waitList = @_waitPool[bodule] ?= []
         if waitList.indexOf(parent) == -1
             waitList.push parent
+        return unless not @_loading[bodule]
+        @_loading[bodule] = true
         if !Bodule._cache[bodule]
             script = document.createElement 'script'
-            console.log "load module #{bodule}"
             src = @config.host + '/' + bodule.replace('@', '/') + '.js'
             script.src = src
             document.head.appendChild script
@@ -53,8 +55,18 @@ class Bodule
             Bodule._cache[parent].check()
         return
     @normalize: (path)->
-        path.replace /\/\.\//g, '/'
-        path.replace /\/{2,}/g, '/'
+        path = path.replace /\/\.\//g, '/'
+        path = path.replace /\/{2,}/g, '/'
+        path = path.split '/'
+        toPath = []
+        while path.length > 0
+            top = path.pop()
+            if top is '..'
+                path.pop()
+            else
+                toPath.unshift top
+        toPath.join '/'
+            
 
     @dirname: (path)->
         path = path.split '/'
@@ -65,7 +77,7 @@ class Bodule
     load: ->
         self = @
         deps = @deps.filter (dep)->
-            !Bodule._cache[dep] || !Bodule._cache[dep].compiled
+            not Bodule._cache[dep] || not Bodule._cache[dep].compiled
         if not deps.length
             @compile()
         else
@@ -73,10 +85,9 @@ class Bodule
                 Bodule._load dep, self.id
         return
     check: ->
-        console.log "check #{@id}"
         deps = @deps.filter (dep)->
             not Bodule._cache[dep] || not Bodule._cache[dep].compiled
-        if not deps.length
+        if not deps.length && not @compiled
             @compile()
 
     compile: ->
@@ -111,4 +122,3 @@ do ->
         d = require './d'
         e = require './e'
         exports.cfunc = ->
-            console.log d
