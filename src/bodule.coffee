@@ -35,6 +35,8 @@ class Bodule
         @_cache[id] = bodule
         bodule.load()
 
+    @use: (mods. callback)->
+
     @_load: (bodule, parent)->
         waitList = @_waitPool[bodule] ?= []
         if waitList.indexOf(parent) == -1
