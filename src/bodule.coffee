@@ -17,17 +17,27 @@ class Bodule
         @factory = factory
         @exports = {}
         @compiled = false
+        @loaded = false
+        @selfCompile = false
 
     # Bodule property
     @_cache: {},
     @_waitPool : {},
     @_loading : {},
-
+    @__guid: 0,
     # Bodule method
     @config: (@config)->
 
     @require: (id)->
-        @_cache[id].exports
+        bodule = @_cache[id]
+        if bodule
+            if bodule.compiled
+                bodule.exports
+            else
+                bodule.compile()
+                bodule.exports
+        else
+            throw new Error "bodule #{id} isn't exist"
 
     @define: (id, deps, factory)->
         console.log "define #{id}"
@@ -35,7 +45,16 @@ class Bodule
         @_cache[id] = bodule
         bodule.load()
 
-    @use: (mods. callback)->
+    @use: (mods, callback)->
+        id = @_guid()
+        console.log "define #{id}"
+        bodule = new Bodule(id, mods, callback)
+        bodule.selfCompile = true
+        @_cache[id] = bodule
+        bodule.load()
+
+    @_guid: ->
+        "guid@#{@__guid++}"
 
     @_load: (bodule, parent)->
         waitList = @_waitPool[bodule] ?= []
@@ -50,7 +69,7 @@ class Bodule
             document.head.appendChild script
         return
 
-    @_compiled: (id) ->
+    @_loaded: (id) ->
         waitList = @_waitPool[id]
         return if not waitList
         for parent in waitList
@@ -79,18 +98,22 @@ class Bodule
     load: ->
         self = @
         deps = @deps.filter (dep)->
-            not Bodule._cache[dep] || not Bodule._cache[dep].compiled
+            not Bodule._cache[dep] || not Bodule._cache[dep].loaded
         if not deps.length
-            @compile()
+            @loaded = true
+            Bodule._loaded @id
         else
             for dep in deps
                 Bodule._load dep, self.id
         return
     check: ->
         deps = @deps.filter (dep)->
-            not Bodule._cache[dep] || not Bodule._cache[dep].compiled
-        if not deps.length && not @compiled
-            @compile()
+            not Bodule._cache[dep] || not Bodule._cache[dep].loaded
+        if not deps.length && not @loaded
+            @loaded = true
+            if @selfCompile
+                @compile()
+            Bodule._loaded @id
 
     compile: ->
         console.log "compile module #{@id}"
@@ -105,16 +128,18 @@ class Bodule
         @factory(require, exports, module)
         @exports = module.exports
         @compiled = true
-        Bodule._compiled @id
         return
 
 
 do ->
-    Bodule.config
-        host: 'http://localhost:8080'
+    window.Bodule = Bodule
     window.define = ->
         Bodule.define.apply Bodule, arguments
+
+    Bodule.config
+        host: 'http://localhost:8080'
     
+
     define 'bodule@0.1.0/d', ['basestone@0.0.1/src/basestone'], (require, exports, module)->
         basestone = require 'basestone@0.0.1/src/basestone'
         exports.d = 'd'
@@ -124,3 +149,9 @@ do ->
         d = require './d'
         e = require './e'
         exports.cfunc = ->
+        exports.d = d
+        exports.e = e
+
+    Bodule.use ['bodule@0.1.0/c'], (require, exports, module) ->
+        c = require 'bodule@0.1.0/c' 
+        console.log c

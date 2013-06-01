@@ -23,6 +23,8 @@
       this.factory = factory;
       this.exports = {};
       this.compiled = false;
+      this.loaded = false;
+      this.selfCompile = false;
     }
 
     Bodule._cache = {};
@@ -31,12 +33,26 @@
 
     Bodule._loading = {};
 
+    Bodule.__guid = 0;
+
     Bodule.config = function(config) {
       this.config = config;
     };
 
     Bodule.require = function(id) {
-      return this._cache[id].exports;
+      var bodule;
+
+      bodule = this._cache[id];
+      if (bodule) {
+        if (bodule.compiled) {
+          return bodule.exports;
+        } else {
+          bodule.compile();
+          return bodule.exports;
+        }
+      } else {
+        throw new Error("bodule " + id + " isn't exist");
+      }
     };
 
     Bodule.define = function(id, deps, factory) {
@@ -46,6 +62,21 @@
       bodule = new Bodule(id, deps, factory);
       this._cache[id] = bodule;
       return bodule.load();
+    };
+
+    Bodule.use = function(mods, callback) {
+      var bodule, id;
+
+      id = this._guid();
+      console.log("define " + id);
+      bodule = new Bodule(id, mods, callback);
+      bodule.selfCompile = true;
+      this._cache[id] = bodule;
+      return bodule.load();
+    };
+
+    Bodule._guid = function() {
+      return "guid@" + (this.__guid++);
     };
 
     Bodule._load = function(bodule, parent) {
@@ -67,7 +98,7 @@
       }
     };
 
-    Bodule._compiled = function(id) {
+    Bodule._loaded = function(id) {
       var parent, waitList, _i, _len;
 
       waitList = this._waitPool[id];
@@ -109,10 +140,11 @@
 
       self = this;
       deps = this.deps.filter(function(dep) {
-        return !Bodule._cache[dep] || !Bodule._cache[dep].compiled;
+        return !Bodule._cache[dep] || !Bodule._cache[dep].loaded;
       });
       if (!deps.length) {
-        this.compile();
+        this.loaded = true;
+        Bodule._loaded(this.id);
       } else {
         for (_i = 0, _len = deps.length; _i < _len; _i++) {
           dep = deps[_i];
@@ -125,10 +157,14 @@
       var deps;
 
       deps = this.deps.filter(function(dep) {
-        return !Bodule._cache[dep] || !Bodule._cache[dep].compiled;
+        return !Bodule._cache[dep] || !Bodule._cache[dep].loaded;
       });
-      if (!deps.length && !this.compiled) {
-        return this.compile();
+      if (!deps.length && !this.loaded) {
+        this.loaded = true;
+        if (this.selfCompile) {
+          this.compile();
+        }
+        return Bodule._loaded(this.id);
       }
     };
 
@@ -149,7 +185,6 @@
       this.factory(require, exports, module);
       this.exports = module.exports;
       this.compiled = true;
-      Bodule._compiled(this.id);
     };
 
     return Bodule;
@@ -157,12 +192,13 @@
   })();
 
   (function() {
-    Bodule.config({
-      host: 'http://localhost:8080'
-    });
+    window.Bodule = Bodule;
     window.define = function() {
       return Bodule.define.apply(Bodule, arguments);
     };
+    Bodule.config({
+      host: 'http://localhost:8080'
+    });
     define('bodule@0.1.0/d', ['basestone@0.0.1/src/basestone'], function(require, exports, module) {
       var basestone;
 
@@ -170,12 +206,20 @@
       exports.d = 'd';
       return exports.basestone = basestone;
     });
-    return define('bodule@0.1.0/c', ['./d', './e'], function(require, exports, module) {
+    define('bodule@0.1.0/c', ['./d', './e'], function(require, exports, module) {
       var d, e;
 
       d = require('./d');
       e = require('./e');
-      return exports.cfunc = function() {};
+      exports.cfunc = function() {};
+      exports.d = d;
+      return exports.e = e;
+    });
+    return Bodule.use(['bodule@0.1.0/c'], function(require, exports, module) {
+      var c;
+
+      c = require('bodule@0.1.0/c');
+      return console.log(c);
     });
   })();
 
