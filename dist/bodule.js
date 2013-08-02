@@ -32,13 +32,14 @@
   __define('util', function(require, exports, module) {
     var guid, head, i, loadScript;
 
-    head = document.getElementByTagName('head')[0];
+    head = document.getElementsByTagName('head')[0];
     loadScript = function(id) {
       var node;
 
       node = document.createElement('script');
       node.type = 'text/javascript';
       node.async = true;
+      node.src = "" + id + ".js";
       node.onload = function() {
         return head.removeChild(node);
       };
@@ -63,7 +64,7 @@
       EventEmmiter.prototype.listeners = function(event) {
         var listeners;
 
-        listeners = this.listeners;
+        listeners = this.__listeners;
         return listeners[event] || (listeners[event] = []);
       };
 
@@ -114,16 +115,14 @@
       Module.modules = {};
 
       Module.get = function(id, deps, factory) {
-        var moudle;
-
         module = this.modules[id];
         if (module) {
           module.deps = deps;
           module.factory = factory;
         } else {
-          moudle = new Module(id, deps, factory);
+          module = new Module(id, deps, factory);
         }
-        return modules[id] = module;
+        return this.modules[id] = module;
       };
 
       Module.define = function(id, deps, factory) {
@@ -137,8 +136,10 @@
         var _this = this;
 
         require = function(id) {
-          module = _this.get(id);
-          return module.exports || (module.exports = _this.use(module));
+          var mod;
+
+          mod = _this.modules[id];
+          return mod.exports || (mod.exports = _this.use(mod));
         };
         exports = module.exports = {};
         module.factory(require, exports, module);
@@ -189,6 +190,7 @@
       Module.prototype.isDepsLoaded = function() {
         var loaded, _i, _len, _ref;
 
+        console.log("" + this.id + " is loaded?");
         loaded = true;
         _ref = this.depModules;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -198,13 +200,15 @@
           }
         }
         if (loaded) {
+          this.state = STATUS.LOADED;
+          console.log("" + this.id + " is loaded");
           return this.emit('loaded');
         }
       };
 
       Module.prototype.fetch = function() {
-        if (this.state > STATUS.FETCHING) {
-          util.loadScript(id);
+        if (this.state < STATUS.FETCHING) {
+          util.loadScript(this.id);
           return;
         }
         return this.state = STATUS.FETCHING;
@@ -231,18 +235,19 @@
       },
       define: function(id, deps, factory) {
         return Module.define(id, deps, factory);
-      }
+      },
+      Module: Module
     };
     return module.exports = Bodule;
   });
 
-  __use('bodule', function(require) {
+  __use(function(require) {
     var Bodule;
 
     Bodule = require('bodule');
-    window.Bodule;
+    window.Bodule = Bodule;
     return window.define = function() {
-      return Bodule.apply(Bodule, arguments);
+      return Bodule.define.apply(Bodule, arguments);
     };
   });
 

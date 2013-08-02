@@ -24,11 +24,12 @@ __use = (factory)->
 
 # LoadScript
 __define 'util', (require, exports, module)->
-    head = document.getElementByTagName('head')[0]
+    head = document.getElementsByTagName('head')[0]
     loadScript = (id) ->
         node = document.createElement 'script'
         node.type = 'text/javascript'
         node.async = true
+        node.src = "#{id}.js"
         node.onload = ->
             head.removeChild node
         head.appendChild node
@@ -45,7 +46,7 @@ __define 'emmiter', (require, exports, module)->
         constructor: ->
             @__listeners = {}
         listeners: (event)->
-            listeners = @listeners
+            listeners = @__listeners
             listeners[event] or listeners[event] = []
         on: (event, listener)->
             @listeners(event).push listener
@@ -79,8 +80,8 @@ __define 'module', (require, exports, module)->
                 module.deps = deps
                 module.factory = factory
             else
-                moudle = new Module id, deps, factory
-            modules[id] = module
+                module = new Module id, deps, factory
+            @modules[id] = module
         @define: (id, deps, factory)->
             module = @get id, deps, factory
             module.state = STATUS.SAVED
@@ -88,8 +89,8 @@ __define 'module', (require, exports, module)->
             module
         @use: (module)->
             require = (id)=>
-                module = @get id
-                module.exports or module.exports = @use module
+                mod = @modules[id]
+                mod.exports or mod.exports = @use mod
             exports = module.exports = {}
             module.factory(require, exports, module)
             module.exports
@@ -116,15 +117,18 @@ __define 'module', (require, exports, module)->
                 else if moudle.state is STATUS.SAVED
                     module.loadDeps()
         isDepsLoaded: =>
+            console.log "#{@id} is loaded?"
             loaded = true
             for module in @depModules
                 if module.state < STATUS.LOADED
                     loaded = false
             if loaded
+                @state = STATUS.LOADED
+                console.log "#{@id} is loaded"
                 @emit 'loaded'
         fetch: ->
-            if @state > STATUS.FETCHING
-                util.loadScript id
+            if @state < STATUS.FETCHING
+                util.loadScript @id
                 return
             @state = STATUS.FETCHING
 
@@ -142,11 +146,12 @@ __define 'bodule', (require, exports, module)->
             module.loadDeps()
         define: (id, deps, factory)->
             Module.define id, deps, factory
+        Module: Module
     module.exports = Bodule
 
 # API
-__use 'bodule', (require)->
+__use (require)->
     Bodule = require 'bodule'
-    window.Bodule
+    window.Bodule = Bodule
     window.define = ()->
-        Bodule.apply(Bodule, arguments)
+        Bodule.define.apply(Bodule, arguments)
