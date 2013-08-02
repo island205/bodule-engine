@@ -132,17 +132,14 @@
         return module;
       };
 
+      Module.require = function(id) {
+        module = Module.modules[id];
+        return module.exports || (module.exports = Module.use(module));
+      };
+
       Module.use = function(module) {
-        var _this = this;
-
-        require = function(id) {
-          var mod;
-
-          mod = _this.modules[id];
-          return mod.exports || (mod.exports = _this.use(mod));
-        };
         exports = module.exports = {};
-        module.factory(require, exports, module);
+        module.factory(this.require, exports, module);
         return module.exports;
       };
 
@@ -190,7 +187,6 @@
       Module.prototype.isDepsLoaded = function() {
         var loaded, _i, _len, _ref;
 
-        console.log("" + this.id + " is loaded?");
         loaded = true;
         _ref = this.depModules;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -201,7 +197,6 @@
         }
         if (loaded) {
           this.state = STATUS.LOADED;
-          console.log("" + this.id + " is loaded");
           return this.emit('loaded');
         }
       };
@@ -216,7 +211,7 @@
 
       return Module;
 
-    })(EventEmmiter);
+    }).call(this, EventEmmiter);
     return module.exports = Module;
   });
 

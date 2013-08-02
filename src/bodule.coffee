@@ -4,7 +4,8 @@
 # **BODULE-ENGINE** is a runtime, in which all of the wrapper `node` module are running.
 # it's a part of  solution for packing `node` module to browser.
 
-# CommonJS seed RUNTIME
+
+# Seed runtime
 __modules = {}
 
 __require = (id)->
@@ -22,8 +23,11 @@ __use = (factory)->
     factory __require, exports, module
     module.exports
 
-# LoadScript
+
+# Util
 __define 'util', (require, exports, module)->
+
+    # Script loader util
     head = document.getElementsByTagName('head')[0]
     loadScript = (id) ->
         node = document.createElement 'script'
@@ -34,14 +38,18 @@ __define 'util', (require, exports, module)->
             head.removeChild node
         head.appendChild node
     
+    # Guid
     i = 0
     guid = ->
         ++i
+
     exports.loadScript = loadScript
     exports.guid = guid
 
+
 # EventEmmiter
 __define 'emmiter', (require, exports, module)->
+
     class EventEmmiter
         constructor: ->
             @__listeners = {}
@@ -61,9 +69,13 @@ __define 'emmiter', (require, exports, module)->
 
     module.exports = EventEmmiter
  
+
+# Module
 __define 'module', (require, exports, module)->
+
     util = require 'util'
     EventEmmiter = require 'emmiter'
+
     STATUS =
         INIT:       0
         FETCHING:   1
@@ -72,7 +84,9 @@ __define 'module', (require, exports, module)->
         LOADED:     4
         EXECUTING:  5
         EXECUTED:   6
+
     class Module extends EventEmmiter
+        # Static
         @modules = {}
         @get: (id, deps, factory)->
             module = @modules[id]
@@ -87,13 +101,15 @@ __define 'module', (require, exports, module)->
             module.state = STATUS.SAVED
             module.loadDeps()
             module
+        @require: (id)=>
+            module = @modules[id]
+            module.exports or module.exports = @use module
         @use: (module)->
-            require = (id)=>
-                mod = @modules[id]
-                mod.exports or mod.exports = @use mod
             exports = module.exports = {}
-            module.factory(require, exports, module)
+            module.factory(@require, exports, module)
             module.exports
+        
+        # Instance
         constructor: (@id, @deps=[], @factory)->
             @exports = null
             @state = STATUS.INIT
@@ -117,14 +133,12 @@ __define 'module', (require, exports, module)->
                 else if moudle.state is STATUS.SAVED
                     module.loadDeps()
         isDepsLoaded: =>
-            console.log "#{@id} is loaded?"
             loaded = true
             for module in @depModules
                 if module.state < STATUS.LOADED
                     loaded = false
             if loaded
                 @state = STATUS.LOADED
-                console.log "#{@id} is loaded"
                 @emit 'loaded'
         fetch: ->
             if @state < STATUS.FETCHING
@@ -134,10 +148,14 @@ __define 'module', (require, exports, module)->
 
     module.exports = Module
 
+
 # Bodule
 __define 'bodule', (require, exports, module)->
+
     Module = require 'module'
     util  = require 'util'
+
+    # Bodule API
     Bodule =
         use: (deps, factory)->
             module = Module.get '_use_' + util.guid(), deps, factory
@@ -147,11 +165,15 @@ __define 'bodule', (require, exports, module)->
         define: (id, deps, factory)->
             Module.define id, deps, factory
         Module: Module
+
     module.exports = Bodule
+
 
 # API
 __use (require)->
+
     Bodule = require 'bodule'
+
     window.Bodule = Bodule
     window.define = ()->
         Bodule.define.apply(Bodule, arguments)
