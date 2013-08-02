@@ -1,5 +1,6 @@
 (function() {
   var __define, __modules, __require, __use,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -28,6 +29,29 @@
     return module.exports;
   };
 
+  __define('util', function(require, exports, module) {
+    var guid, head, i, loadScript;
+
+    head = document.getElementByTagName('head')[0];
+    loadScript = function(id) {
+      var node;
+
+      node = document.createElement('script');
+      node.type = 'text/javascript';
+      node.async = true;
+      node.onload = function() {
+        return head.removeChild(node);
+      };
+      return head.appendChild(node);
+    };
+    i = 0;
+    guid = function() {
+      return ++i;
+    };
+    exports.loadScript = loadScript;
+    return exports.guid = guid;
+  });
+
   __define('emmiter', function(require, exports, module) {
     var EventEmmiter;
 
@@ -43,36 +67,8 @@
         return listeners[event] || (listeners[event] = []);
       };
 
-      EventEmmiter.prototype.once = function(event, listener) {
-        var once,
-          _this = this;
-
-        once = function() {
-          _this.off(event, listener);
-          return listener.apply(_this, arguments);
-        };
-        once.__listener = listener;
-        return this.on(event, once);
-      };
-
       EventEmmiter.prototype.on = function(event, listener) {
         return this.listeners(event).push(listener);
-      };
-
-      EventEmmiter.prototype.off = function(event, listener) {
-        var index, lis, listeners, _i, _len;
-
-        index = -1;
-        listeners = this.listeners(event);
-        for (_i = 0, _len = listeners.length; _i < _len; _i++) {
-          lis = listeners[_i];
-          if (lis === listener || lis.listener === listener) {
-            index = i;
-          }
-        }
-        if (index !== -1) {
-          return listeners.splice(index, 1);
-        }
       };
 
       EventEmmiter.prototype.emit = function(event) {
@@ -98,39 +94,156 @@
     return module.exports = EventEmmiter;
   });
 
-  __define('state', function(require, exports, module) {
-    var EventEmmiter, State, _ref;
-
-    EventEmmiter = require('emmiter');
-    State = (function(_super) {
-      __extends(State, _super);
-
-      function State() {
-        _ref = State.__super__.constructor.apply(this, arguments);
-        return _ref;
-      }
-
-      return State;
-
-    })(EventEmmiter);
-    return module.exports = State;
-  });
-
   __define('module', function(require, exports, module) {
-    var Module, _ref;
+    var EventEmmiter, Module, STATUS, util;
 
+    util = require('util');
+    EventEmmiter = require('emmiter');
+    STATUS = {
+      INIT: 0,
+      FETCHING: 1,
+      SAVED: 2,
+      LOADING: 3,
+      LOADED: 4,
+      EXECUTING: 5,
+      EXECUTED: 6
+    };
     Module = (function(_super) {
       __extends(Module, _super);
 
-      function Module() {
-        _ref = Module.__super__.constructor.apply(this, arguments);
-        return _ref;
+      Module.modules = {};
+
+      Module.get = function(id, deps, factory) {
+        var moudle;
+
+        module = this.modules[id];
+        if (module) {
+          module.deps = deps;
+          module.factory = factory;
+        } else {
+          moudle = new Module(id, deps, factory);
+        }
+        return modules[id] = module;
+      };
+
+      Module.define = function(id, deps, factory) {
+        module = this.get(id, deps, factory);
+        module.state = STATUS.SAVED;
+        module.loadDeps();
+        return module;
+      };
+
+      Module.use = function(module) {
+        var _this = this;
+
+        require = function(id) {
+          module = _this.get(id);
+          return module.exports || (module.exports = _this.use(module));
+        };
+        exports = module.exports = {};
+        module.factory(require, exports, module);
+        return module.exports;
+      };
+
+      function Module(id, deps, factory) {
+        this.id = id;
+        this.deps = deps != null ? deps : [];
+        this.factory = factory;
+        this.isDepsLoaded = __bind(this.isDepsLoaded, this);
+        this.exports = null;
+        this.state = STATUS.INIT;
+        Module.__super__.constructor.apply(this, arguments);
       }
+
+      Module.prototype.loadDeps = function() {
+        var dep, depModules, _i, _j, _len, _len1, _ref, _results;
+
+        depModules = [];
+        if (this.state > STATUS.LOADING) {
+          return;
+        }
+        this.state = STATUS.LOADING;
+        _ref = this.deps;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          dep = _ref[_i];
+          module = Module.get(dep);
+          module.on('loaded', this.isDepsLoaded);
+          depModules.push(module);
+        }
+        this.depModules = depModules;
+        this.isDepsLoaded();
+        _results = [];
+        for (_j = 0, _len1 = depModules.length; _j < _len1; _j++) {
+          module = depModules[_j];
+          if (module.state < STATUS.FETCHING) {
+            _results.push(module.fetch());
+          } else if (moudle.state === STATUS.SAVED) {
+            _results.push(module.loadDeps());
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      Module.prototype.isDepsLoaded = function() {
+        var loaded, _i, _len, _ref;
+
+        loaded = true;
+        _ref = this.depModules;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          module = _ref[_i];
+          if (module.state < STATUS.LOADED) {
+            loaded = false;
+          }
+        }
+        if (loaded) {
+          return this.emit('loaded');
+        }
+      };
+
+      Module.prototype.fetch = function() {
+        if (this.state > STATUS.FETCHING) {
+          util.loadScript(id);
+          return;
+        }
+        return this.state = STATUS.FETCHING;
+      };
 
       return Module;
 
-    })(State);
+    })(EventEmmiter);
     return module.exports = Module;
+  });
+
+  __define('bodule', function(require, exports, module) {
+    var Bodule, Module, util;
+
+    Module = require('module');
+    util = require('util');
+    Bodule = {
+      use: function(deps, factory) {
+        module = Module.get('_use_' + util.guid(), deps, factory);
+        module.on('loaded', function() {
+          return Module.use(module);
+        });
+        return module.loadDeps();
+      },
+      define: function(id, deps, factory) {
+        return Module.define(id, deps, factory);
+      }
+    };
+    return module.exports = Bodule;
+  });
+
+  __use('bodule', function(require) {
+    var Bodule;
+
+    Bodule = require('bodule');
+    window.Bodule;
+    return window.define = function() {
+      return Bodule.apply(Bodule, arguments);
+    };
   });
 
 }).call(this);
