@@ -1,226 +1,136 @@
 (function() {
-  var Bodule;
+  var __define, __modules, __require, __use,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Bodule = (function() {
-    function Bodule(id, deps, factory) {
-      var self, _ref;
+  __modules = {};
 
-      self = this;
-      _ref = id.split('@'), this["package"] = _ref[0], this.version = _ref[1];
-      this.version = this.version.split('/');
-      this.path = this.version.slice(1, this.version.length);
-      this.version = this.version[0];
-      this.path = this.path.join('/');
-      this.packageId = "" + this["package"] + "@" + this.version;
-      this.id = id;
-      this.deps = deps;
-      this.deps = this.deps.map(function(dep) {
-        if (dep.indexOf('@') === -1) {
-          dep = Bodule.normalize(self.packageId + '/' + Bodule.dirname(self.path) + '/' + dep);
-        }
-        return dep;
-      });
-      this.factory = factory;
-      this.exports = {};
-      this.compiled = false;
-      this.loaded = false;
-      this.selfCompile = false;
-    }
+  __require = function(id) {
+    var module;
 
-    Bodule._cache = {};
+    module = __modules[id];
+    return module.exports || (module.exports = __use(module.factory));
+  };
 
-    Bodule._waitPool = {};
-
-    Bodule._loading = {};
-
-    Bodule.__guid = 0;
-
-    Bodule.config = function(config) {
-      this.config = config;
+  __define = function(id, factory) {
+    return __modules[id] = {
+      id: id,
+      factory: factory
     };
+  };
 
-    Bodule.require = function(id) {
-      var bodule;
+  __use = function(factory) {
+    var exports, module;
 
-      bodule = this._cache[id];
-      if (bodule) {
-        if (bodule.compiled) {
-          return bodule.exports;
-        } else {
-          bodule.compile();
-          return bodule.exports;
-        }
-      } else {
-        throw new Error("bodule " + id + " isn't exist");
+    module = {};
+    exports = module.exports = {};
+    factory(__require, exports, module);
+    return module.exports;
+  };
+
+  __define('emmiter', function(require, exports, module) {
+    var EventEmmiter;
+
+    EventEmmiter = (function() {
+      function EventEmmiter() {
+        this.__listeners = {};
       }
-    };
 
-    Bodule.define = function(id, deps, factory) {
-      var bodule;
+      EventEmmiter.prototype.listeners = function(event) {
+        var listeners;
 
-      console.log("define " + id);
-      bodule = new Bodule(id, deps, factory);
-      this._cache[id] = bodule;
-      return bodule.load();
-    };
-
-    Bodule.use = function(mods, callback) {
-      var bodule, id;
-
-      id = this._guid();
-      console.log("define " + id);
-      bodule = new Bodule(id, mods, callback);
-      bodule.selfCompile = true;
-      this._cache[id] = bodule;
-      return bodule.load();
-    };
-
-    Bodule._guid = function() {
-      return "guid@" + (this.__guid++);
-    };
-
-    Bodule._load = function(bodule, parent) {
-      var script, src, waitList, _base, _ref;
-
-      waitList = (_ref = (_base = this._waitPool)[bodule]) != null ? _ref : _base[bodule] = [];
-      if (waitList.indexOf(parent) === -1) {
-        waitList.push(parent);
-      }
-      if (!!this._loading[bodule]) {
-        return;
-      }
-      this._loading[bodule] = true;
-      if (!Bodule._cache[bodule]) {
-        script = document.createElement('script');
-        src = this.config.host + '/' + bodule.replace('@', '/') + '.js';
-        script.src = src;
-        document.head.appendChild(script);
-      }
-    };
-
-    Bodule._loaded = function(id) {
-      var parent, waitList, _i, _len;
-
-      waitList = this._waitPool[id];
-      if (!waitList) {
-        return;
-      }
-      for (_i = 0, _len = waitList.length; _i < _len; _i++) {
-        parent = waitList[_i];
-        Bodule._cache[parent].check();
-      }
-    };
-
-    Bodule.normalize = function(path) {
-      var toPath, top;
-
-      path = path.replace(/\/\.\//g, '/');
-      path = path.replace(/\/{2,}/g, '/');
-      path = path.split('/');
-      toPath = [];
-      while (path.length > 0) {
-        top = path.pop();
-        if (top === '..') {
-          path.pop();
-        } else {
-          toPath.unshift(top);
-        }
-      }
-      return toPath.join('/');
-    };
-
-    Bodule.dirname = function(path) {
-      path = path.split('/');
-      path = path.slice(0, path.length - 1);
-      return path.join('/');
-    };
-
-    Bodule.prototype.load = function() {
-      var dep, deps, self, _i, _len;
-
-      self = this;
-      deps = this.deps.filter(function(dep) {
-        return !Bodule._cache[dep] || !Bodule._cache[dep].loaded;
-      });
-      if (!deps.length) {
-        this.loaded = true;
-        Bodule._loaded(this.id);
-      } else {
-        for (_i = 0, _len = deps.length; _i < _len; _i++) {
-          dep = deps[_i];
-          Bodule._load(dep, self.id);
-        }
-      }
-    };
-
-    Bodule.prototype.check = function() {
-      var deps;
-
-      deps = this.deps.filter(function(dep) {
-        return !Bodule._cache[dep] || !Bodule._cache[dep].loaded;
-      });
-      if (!deps.length && !this.loaded) {
-        this.loaded = true;
-        if (this.selfCompile) {
-          this.compile();
-        }
-        return Bodule._loaded(this.id);
-      }
-    };
-
-    Bodule.prototype.compile = function() {
-      var exports, module, require, self,
-        _this = this;
-
-      console.log("compile module " + this.id);
-      self = this;
-      module = {};
-      exports = module.exports = this.exports;
-      require = function(id) {
-        if (id.indexOf('@') === -1) {
-          id = Bodule.normalize(_this.packageId + '/' + Bodule.dirname(_this.path) + '/' + id);
-        }
-        return Bodule.require(id);
+        listeners = this.listeners;
+        return listeners[event] || (listeners[event] = []);
       };
-      this.factory(require, exports, module);
-      this.exports = module.exports;
-      this.compiled = true;
-    };
 
-    return Bodule;
+      EventEmmiter.prototype.once = function(event, listener) {
+        var once,
+          _this = this;
 
-  })();
+        once = function() {
+          _this.off(event, listener);
+          return listener.apply(_this, arguments);
+        };
+        once.__listener = listener;
+        return this.on(event, once);
+      };
 
-  (function() {
-    window.Bodule = Bodule;
-    window.define = function() {
-      return Bodule.define.apply(Bodule, arguments);
-    };
-    Bodule.config({
-      host: 'http://localhost:8080'
-    });
-    define('bodule@0.1.0/d', ['basestone@0.0.1/src/basestone'], function(require, exports, module) {
-      var basestone;
+      EventEmmiter.prototype.on = function(event, listener) {
+        return this.listeners(event).push(listener);
+      };
 
-      basestone = require('basestone@0.0.1/src/basestone');
-      exports.d = 'd';
-      return exports.basestone = basestone;
-    });
-    define('bodule@0.1.0/c', ['./d', './e'], function(require, exports, module) {
-      var d, e;
+      EventEmmiter.prototype.off = function(event, listener) {
+        var index, lis, listeners, _i, _len;
 
-      d = require('./d');
-      e = require('./e');
-      exports.cfunc = function() {};
-      exports.d = d;
-      return exports.e = e;
-    });
-    return Bodule.use(['bodule@0.1.0/c'], function(require, exports, module) {
-      var c;
+        index = -1;
+        listeners = this.listeners(event);
+        for (_i = 0, _len = listeners.length; _i < _len; _i++) {
+          lis = listeners[_i];
+          if (lis === listener || lis.listener === listener) {
+            index = i;
+          }
+        }
+        if (index !== -1) {
+          return listeners.splice(index, 1);
+        }
+      };
 
-      c = require('bodule@0.1.0/c');
-      return console.log(c);
-    });
-  })();
+      EventEmmiter.prototype.emit = function(event) {
+        var args, listener, listeners, _i, _len, _results;
+
+        args = [];
+        listeners = this.listeners(event).slice();
+        if (arguments.length > 1) {
+          args = Array.prototype.slice(arguments);
+          args.shift();
+        }
+        _results = [];
+        for (_i = 0, _len = listeners.length; _i < _len; _i++) {
+          listener = listeners[_i];
+          _results.push(listener.apply(this, args));
+        }
+        return _results;
+      };
+
+      return EventEmmiter;
+
+    })();
+    return module.exports = EventEmmiter;
+  });
+
+  __define('state', function(require, exports, module) {
+    var EventEmmiter, State, _ref;
+
+    EventEmmiter = require('emmiter');
+    State = (function(_super) {
+      __extends(State, _super);
+
+      function State() {
+        _ref = State.__super__.constructor.apply(this, arguments);
+        return _ref;
+      }
+
+      return State;
+
+    })(EventEmmiter);
+    return module.exports = State;
+  });
+
+  __define('module', function(require, exports, module) {
+    var Module, _ref;
+
+    Module = (function(_super) {
+      __extends(Module, _super);
+
+      function Module() {
+        _ref = Module.__super__.constructor.apply(this, arguments);
+        return _ref;
+      }
+
+      return Module;
+
+    })(State);
+    return module.exports = Module;
+  });
 
 }).call(this);
