@@ -47,6 +47,29 @@ __define 'util', (require, exports, module)->
     exports.guid = guid
 
 
+# Path
+
+__define 'path', (require, exports, module)->
+
+    DIRNAME_REG = /[^?#]*\//
+    ROOT_DIR_REG = /^.*?\/\/.*?\//
+
+    dirname = (path)->
+        path.match(DIRNAME_REG)[0]
+
+    resolve = (from, to)->
+        fisrt = to.charAt 0
+        if fisrt is '.'
+            path = dirname(path) + to
+        if fisrt is '/'
+            match = from.match ROOT_DIR_REG
+            path = m[0] + id.substring(0)
+        path
+
+
+    exports.dirname = dirname
+    exports.resolve = resovle
+
 # EventEmmiter
 __define 'emmiter', (require, exports, module)->
 
@@ -149,16 +172,34 @@ __define 'module', (require, exports, module)->
     module.exports = Module
 
 
+# Config
+__define 'config', (require, exports, module)->
+    path = require 'path'
+    config =
+        cwd: path.dirname location.href
+
+    exports.config = (conf)->
+        if arguments.length is 0
+            config
+        else
+            for key, value of conf
+                config[key] = value
+            config
+
+
 # Bodule
 __define 'bodule', (require, exports, module)->
 
     Module = require 'module'
     util  = require 'util'
+    path = require 'path'
+    config = require 'config'
 
     # Bodule API
     Bodule =
         use: (deps, factory)->
-            module = Module.get '_use_' + util.guid(), deps, factory
+            id = path.resolve config.config().cwd, '/'
+            module = Module.get id, deps, factory
             module.on 'loaded', ->
                 Module.use module
             module.loadDeps()
