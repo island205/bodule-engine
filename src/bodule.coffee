@@ -23,32 +23,19 @@ __use = (factory)->
     factory __require, exports, module
     module.exports
 
-__define 'global', (require, exports)->
-    exports.anonymousModule = null
-    exports.STATUS = 
-        INIT:       0
-        FETCHING:   1
-        SAVED:      2
-        LOADING:    3
-        LOADED:     4
-        EXECUTING:  5
-        EXECUTED:   6
+
 # Util
 __define 'util', (require, exports, module)->
-    global = require 'global'
-    Module = require 'module'
     # Script loader util
     head = document.getElementsByTagName('head')[0]
-    loadScript = (id) ->
+    loadScript = (id, callback) ->
         node = document.createElement 'script'
         node.type = 'text/javascript'
         node.async = true
         node.src = "#{id}.js"
         node.onload = ->
+            callback()
             head.removeChild node
-            module = Module.get id, global.anonymousModule.deps, global.anonymousModule.factory
-            module.state = STATUS.SAVED
-            module.loadDeps()
              
         head.appendChild node
     
@@ -62,7 +49,6 @@ __define 'util', (require, exports, module)->
 
 
 # Path
-
 __define 'path', (require, exports, module)->
 
     DIRNAME_REG = /[^?#]*\//
@@ -94,6 +80,7 @@ __define 'path', (require, exports, module)->
     exports.resolve = resolve
     exports.normalize = normalize
 
+
 # EventEmmiter
 __define 'emmiter', (require, exports, module)->
 
@@ -123,9 +110,17 @@ __define 'module', (require, exports, module)->
     util = require 'util'
     EventEmmiter = require 'emmiter'
     path = require 'path'
-    global = require 'global'
 
-    STATUS = global.STATUS
+    STATUS = 
+        INIT:       0
+        FETCHING:   1
+        SAVED:      2
+        LOADING:    3
+        LOADED:     4
+        EXECUTING:  5
+        EXECUTED:   6
+
+    moduleData = null
 
     class Module extends EventEmmiter
         # Static
@@ -141,21 +136,20 @@ __define 'module', (require, exports, module)->
                 module = new Module id, deps, factory
             @modules[id] = module
         @define: (id, deps, factory)->
-            global.anonymousModule =
-                deps: deps
+            moduleData =
+                deps: deps,
                 factory: factory
-            # module = @get id, deps, factory
-            # module.state = STATUS.SAVED
-            # module.loadDeps()
-            # module
         @require: (id)=>
             module = @modules[id]
             module.exports or module.exports = @use module
         @use: (module)->
-            exports = module.exports = {}
-            module.factory(@require, exports, module)
+            module.exec()
             module.exports
-        
+        @save: (id, deps, factory)->
+            module = @get id, deps, factory
+            module.state = STATUS.SAVED
+            module.loadDeps()
+
         # Instance
         constructor: (@id, @deps=[], @factory)->
             @deps = @deps.map (dep)=>
@@ -164,6 +158,15 @@ __define 'module', (require, exports, module)->
             @exports = null
             @state = STATUS.INIT
             super
+        exec: ->
+            __require = (id)=>
+                id = path.resolve @id, id
+                id = path.normalize id
+                Module.require id
+            __module = {}
+            __exports = __module.exports = {}
+            @factory(__require, __exports, __module)
+            @exports = __module.exports
         loadDeps: ()->
             depModules = []
             if @state > STATUS.LOADING
@@ -192,7 +195,8 @@ __define 'module', (require, exports, module)->
                 @emit 'loaded'
         fetch: ->
             if @state < STATUS.FETCHING
-                util.loadScript @id
+                util.loadScript @id, =>
+                    Module.save @id, moduleData.deps, moduleData.factory
                 return
             @state = STATUS.FETCHING
 

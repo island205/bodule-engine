@@ -29,26 +29,11 @@
     return module.exports;
   };
 
-  __define('global', function(require, exports) {
-    exports.anonymousModule = null;
-    return exports.STATUS = {
-      INIT: 0,
-      FETCHING: 1,
-      SAVED: 2,
-      LOADING: 3,
-      LOADED: 4,
-      EXECUTING: 5,
-      EXECUTED: 6
-    };
-  });
-
   __define('util', function(require, exports, module) {
-    var Module, global, guid, head, i, loadScript;
+    var guid, head, i, loadScript;
 
-    global = require('global');
-    Module = require('module');
     head = document.getElementsByTagName('head')[0];
-    loadScript = function(id) {
+    loadScript = function(id, callback) {
       var node;
 
       node = document.createElement('script');
@@ -56,10 +41,8 @@
       node.async = true;
       node.src = "" + id + ".js";
       node.onload = function() {
-        head.removeChild(node);
-        module = Module.get(id, global.anonymousModule.deps, global.anonymousModule.factory);
-        module.state = STATUS.SAVED;
-        return module.loadDeps();
+        callback();
+        return head.removeChild(node);
       };
       return head.appendChild(node);
     };
@@ -155,13 +138,21 @@
   });
 
   __define('module', function(require, exports, module) {
-    var EventEmmiter, Module, STATUS, global, path, util;
+    var EventEmmiter, Module, STATUS, moduleData, path, util;
 
     util = require('util');
     EventEmmiter = require('emmiter');
     path = require('path');
-    global = require('global');
-    STATUS = global.STATUS;
+    STATUS = {
+      INIT: 0,
+      FETCHING: 1,
+      SAVED: 2,
+      LOADING: 3,
+      LOADED: 4,
+      EXECUTING: 5,
+      EXECUTED: 6
+    };
+    moduleData = null;
     Module = (function(_super) {
       __extends(Module, _super);
 
@@ -182,7 +173,7 @@
       };
 
       Module.define = function(id, deps, factory) {
-        return global.anonymousModule = {
+        return moduleData = {
           deps: deps,
           factory: factory
         };
@@ -194,9 +185,14 @@
       };
 
       Module.use = function(module) {
-        exports = module.exports = {};
-        module.factory(this.require, exports, module);
+        module.exec();
         return module.exports;
+      };
+
+      Module.save = function(id, deps, factory) {
+        module = this.get(id, deps, factory);
+        module.state = STATUS.SAVED;
+        return module.loadDeps();
       };
 
       function Module(id, deps, factory) {
@@ -214,6 +210,21 @@
         this.state = STATUS.INIT;
         Module.__super__.constructor.apply(this, arguments);
       }
+
+      Module.prototype.exec = function() {
+        var __exports, __module,
+          _this = this;
+
+        __require = function(id) {
+          id = path.resolve(_this.id, id);
+          id = path.normalize(id);
+          return Module.require(id);
+        };
+        __module = {};
+        __exports = __module.exports = {};
+        this.factory(__require, __exports, __module);
+        return this.exports = __module.exports;
+      };
 
       Module.prototype.loadDeps = function() {
         var dep, depModules, _i, _j, _len, _len1, _ref, _results;
@@ -264,8 +275,12 @@
       };
 
       Module.prototype.fetch = function() {
+        var _this = this;
+
         if (this.state < STATUS.FETCHING) {
-          util.loadScript(this.id);
+          util.loadScript(this.id, function() {
+            return Module.save(_this.id, moduleData.deps, moduleData.factory);
+          });
           return;
         }
         return this.state = STATUS.FETCHING;
