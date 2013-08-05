@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>bodule-engine</title>
+  <title>bodule.coffee</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="docco.css" />
@@ -13,15 +13,23 @@
     
     <ul class="sections">
         
+          <li id="title">
+              <div class="annotation">
+                  <h1>bodule.coffee</h1>
+              </div>
+          </li>
+        
         
         
         <li id="section-1">
             <div class="annotation">
               
-              <div class="pilwrap for-h1">
+              <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <h1>bodule-engine</h1>
+              <p>BODULE-ENGINE</p>
+<p><strong>BODULE-ENGINE</strong> is a runtime, in which all of the wrapper <code>node</code> module are running.
+it&#39;s a part of  solution for packing <code>node</code> module to browser.</p>
 
             </div>
             
@@ -34,12 +42,26 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p><strong>bodule-engine</strong> is a runtime, in which all of the wrapper <code>node</code> module are running.
-it&#39;s a part of  solution for packing <code>node</code> module to browser.</p>
+              <p>Seed runtime</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">Bodule</span></span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>__modules = {}
+
+<span class="function"><span class="title">__require</span></span> = (id)-&gt;
+    module = __modules[id]
+    module.exports <span class="keyword">or</span> module.exports = __use module.factory
+
+<span class="function"><span class="title">__define</span></span> = (id, factory)-&gt;
+    __modules[id] =
+        id: id
+        factory:factory
+
+<span class="function"><span class="title">__use</span></span> = (factory)-&gt;
+    module = {}
+    exports = module.exports = {}
+    factory __require, exports, module
+    module.exports</pre></div></div>
             
         </li>
         
@@ -50,29 +72,11 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>Constructor</p>
+              <p>Util</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    constructor: (id, deps, factory) -&gt;
-        self = @
-        [<span class="property">@package</span>, <span class="property">@version</span>] = id.split <span class="string">'@'</span>
-        <span class="property">@version</span> = <span class="property">@version</span>.split <span class="string">'/'</span>
-        <span class="property">@path</span> = <span class="property">@version</span>.slice <span class="number">1</span>, <span class="property">@version</span>.length
-        <span class="property">@version</span> = <span class="property">@version</span>[<span class="number">0</span>]
-        <span class="property">@path</span> = <span class="property">@path</span>.join <span class="string">'/'</span>
-        <span class="property">@packageId</span> = <span class="string">"<span class="subst">#{@package}</span>@<span class="subst">#{@version}</span>"</span>
-        <span class="property">@id</span> = id
-        <span class="property">@deps</span> = deps
-        <span class="property">@deps</span> = <span class="property">@deps</span>.map (dep) -&gt;
-            <span class="keyword">if</span> dep.indexOf(<span class="string">'@'</span>) == -<span class="number">1</span>
-                dep = Bodule.normalize(self.packageId + <span class="string">'/'</span> + Bodule.dirname(self.path) + <span class="string">'/'</span> + dep)
-            dep
-        <span class="property">@factory</span> = factory
-        <span class="property">@exports</span> = {}
-        <span class="property">@compiled</span> = <span class="literal">false</span>
-        <span class="property">@loaded</span> = <span class="literal">false</span>
-        <span class="property">@selfCompile</span> = <span class="literal">false</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'util'</span>, (require, exports, module)-&gt;</pre></div></div>
             
         </li>
         
@@ -83,14 +87,21 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <p>Bodule property</p>
+              <p>Script loader util</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="property">@_cache</span>: {},
-    <span class="property">@_waitPool</span> : {},
-    <span class="property">@_loading</span> : {},
-    <span class="property">@__guid</span>: <span class="number">0</span>,</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    head = document.getElementsByTagName(<span class="string">'head'</span>)[<span class="number">0</span>]
+    <span class="function"><span class="title">loadScript</span></span> = (id, callback) -&gt;
+        node = document.createElement <span class="string">'script'</span>
+        node.type = <span class="string">'text/javascript'</span>
+        node.async = <span class="literal">true</span>
+        node.src = <span class="string">"<span class="subst">#{id}</span>.js"</span>
+        node.<span class="function"><span class="title">onload</span></span> = -&gt;
+            callback()
+            head.removeChild node
+             
+        head.appendChild node</pre></div></div>
             
         </li>
         
@@ -101,77 +112,16 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
-              <p>Bodule method</p>
+              <p>Guid</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    @config: (@config)-&gt;
+            <div class="content"><div class='highlight'><pre>    i = <span class="number">0</span>
+    <span class="function"><span class="title">guid</span></span> = -&gt;
+        ++i
 
-    @require: (id)-&gt;
-        bodule = @_cache[id]
-        if bodule
-            if bodule.compiled
-                bodule.exports
-            else
-                bodule.compile()
-                bodule.exports
-        else
-            throw new Error "bodule #{id} isn't exist"
-
-    @define: (id, deps, factory)-&gt;
-        console.log "define #{id}"
-        bodule = new Bodule(id, deps, factory)
-        @_cache[id] = bodule
-        bodule.load()
-
-    @use: (mods, callback)-&gt;
-        id = @_guid()
-        console.log "define #{id}"
-        bodule = new Bodule(id, mods, callback)
-        bodule.selfCompile = true
-        @_cache[id] = bodule
-        bodule.load()
-
-    @_guid: -&gt;
-        "guid@#{@__guid++}"
-
-    @_load: (bodule, parent)-&gt;
-        waitList = @_waitPool[bodule] ?= []
-        if waitList.indexOf(parent) == -1
-            waitList.push parent
-        return unless not @_loading[bodule]
-        @_loading[bodule] = true
-        if !Bodule._cache[bodule]
-            script = document.createElement 'script'
-            src = @config.host + '/' + bodule.replace('@', '/') + '.js'
-            script.src = src
-            document.head.appendChild script
-        return
-
-    @_loaded: (id) -&gt;
-        waitList = @_waitPool[id]
-        return if not waitList
-        for parent in waitList
-            Bodule._cache[parent].check()
-        return
-    @normalize: (path)-&gt;
-        path = path.replace /\/\.\//g, '/'
-        path = path.replace /\/{2,}/g, '/'
-        path = path.split '/'
-        toPath = []
-        while path.length &gt; 0
-            top = path.pop()
-            if top is '..'
-                path.pop()
-            else
-                toPath.unshift top
-        toPath.join '/'
-            
-
-    @dirname: (path)-&gt;
-        path = path.split '/'
-        path = path[0...path.length - 1]
-        path.join '/'</pre></div></div>
+    exports.loadScript = loadScript
+    exports.guid = guid</pre></div></div>
             
         </li>
         
@@ -182,36 +132,40 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <p>Instance method</p>
+              <p>Path</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    load: -&gt;
-        self = @
-        deps = <span class="property">@deps</span>.filter (dep)-&gt;
-            <span class="keyword">not</span> Bodule._cache[dep] || <span class="keyword">not</span> Bodule._cache[dep].loaded
-        <span class="keyword">if</span> <span class="keyword">not</span> deps.length
-            <span class="property">@loaded</span> = <span class="literal">true</span>
-            Bodule._loaded <span class="property">@id</span>
-        <span class="keyword">else</span>
-            <span class="keyword">for</span> dep <span class="keyword">in</span> deps
-                Bodule._load dep, self.id
-        <span class="keyword">return</span>
-    check: -&gt;
-        deps = <span class="property">@deps</span>.filter (dep)-&gt;
-            <span class="keyword">not</span> Bodule._cache[dep] || <span class="keyword">not</span> Bodule._cache[dep].loaded
-        <span class="keyword">if</span> <span class="keyword">not</span> deps.length &amp;&amp; <span class="keyword">not</span> <span class="property">@loaded</span>
-            <span class="property">@loaded</span> = <span class="literal">true</span>
-            <span class="keyword">if</span> <span class="property">@selfCompile</span>
-                <span class="property">@compile</span>()
-            Bodule._loaded <span class="property">@id</span>
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'path'</span>, (require, exports, module)-&gt;
 
-    compile: -&gt;
-        console.log <span class="string">"compile module <span class="subst">#{@id}</span>"</span>
-        self = @
-        module = {}
-        exports = module.exports = <span class="property">@exports</span>
-        <span class="function"><span class="title">require</span></span>  = (id) =&gt;</pre></div></div>
+    DIRNAME_REG = <span class="regexp">/[^?#]*\//</span>
+    ROOT_DIR_REG = <span class="regexp">/^.*?\/\/.*?\//</span>
+    MORE_THAN_TWO_SLASH_REG = <span class="regexp">/([^:]\/)(\/{1,})/</span>
+    DOT_REG = <span class="regexp">/\/\.\//</span>
+    DOUBLE_DOT_REG = <span class="regexp">/\/[^/]+\/\.\.\//</span>
+
+
+    <span class="function"><span class="title">dirname</span></span> = (path)-&gt;
+        path.match(DIRNAME_REG)[<span class="number">0</span>]
+
+    <span class="function"><span class="title">resolve</span></span> = (from, to)-&gt;
+        fisrt = to.charAt <span class="number">0</span>
+        <span class="keyword">if</span> fisrt <span class="keyword">is</span> <span class="string">'.'</span>
+            path = dirname(from) + to
+        <span class="keyword">if</span> fisrt <span class="keyword">is</span> <span class="string">'/'</span>
+            match = from.match ROOT_DIR_REG
+            path = match[<span class="number">0</span>] + to.substring(<span class="number">0</span>)
+        path
+
+    <span class="function"><span class="title">normalize</span></span> = (path)-&gt;
+        path = path.replace MORE_THAN_TWO_SLASH_REG, <span class="string">'$1'</span> <span class="keyword">while</span> path.match MORE_THAN_TWO_SLASH_REG
+        path = path.replace DOT_REG, <span class="string">'/'</span> <span class="keyword">while</span> path.match DOT_REG
+        path = path.replace DOUBLE_DOT_REG, <span class="string">'/'</span> <span class="keyword">while</span> path.match DOUBLE_DOT_REG
+        path
+
+    exports.dirname = dirname
+    exports.resolve = resolve
+    exports.normalize = normalize</pre></div></div>
             
         </li>
         
@@ -222,43 +176,259 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
-              <p>Is a relative module</p>
+              <p>EventEmmiter</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> id.indexOf(<span class="string">'@'</span>) == -<span class="number">1</span>
-                id = Bodule.normalize(<span class="property">@packageId</span> + <span class="string">'/'</span> + Bodule.dirname(<span class="property">@path</span>) + <span class="string">'/'</span> + id)
-            Bodule.require id
-        <span class="property">@factory</span>(require, exports, module)
-        <span class="property">@exports</span> = module.exports
-        <span class="property">@compiled</span> = <span class="literal">true</span>
-        <span class="keyword">return</span>
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'emmiter'</span>, (require, exports, module)-&gt;
 
+    <span class="class"><span class="keyword">class</span> <span class="title">EventEmmiter</span></span>
+        constructor: -&gt;
+            <span class="property">@__listeners</span> = {}
+        listeners: (event)-&gt;
+            listeners = <span class="property">@__listeners</span>
+            listeners[event] <span class="keyword">or</span> listeners[event] = []
+        <span class="literal">on</span>: (event, listener)-&gt;
+            <span class="property">@listeners</span>(event).push listener
+        emit: (event)-&gt;
+            args = []
+            listeners = <span class="property">@listeners</span>(event).slice()
+            <span class="keyword">if</span> arguments.length &gt; <span class="number">1</span>
+                args = Array::slice arguments
+                args.shift()
+            <span class="keyword">for</span> listener <span class="keyword">in</span> listeners
+                listener.apply @, args
 
-<span class="keyword">do</span> -&gt;
-    window.Bodule = Bodule
-    window.<span class="function"><span class="title">define</span></span> = -&gt;
-        Bodule.define.apply Bodule, arguments
-
-    Bodule.config
-        host: <span class="string">'http://localhost:8080'</span>
-    
-
-    define <span class="string">'bodule@0.1.0/d'</span>, [<span class="string">'basestone@0.0.1/src/basestone'</span>], (require, exports, module)-&gt;
-        basestone = require <span class="string">'basestone@0.0.1/src/basestone'</span>
-        exports.d = <span class="string">'d'</span>
-        exports.basestone = basestone
+    module.exports = EventEmmiter</pre></div></div>
+            
+        </li>
         
-    define <span class="string">'bodule@0.1.0/c'</span>, [<span class="string">'./d'</span>, <span class="string">'./e'</span>], (require, exports, module)-&gt;
-        d = require <span class="string">'./d'</span>
-        e = require <span class="string">'./e'</span>
-        exports.<span class="function"><span class="title">cfunc</span></span> = -&gt;
-        exports.d = d
-        exports.e = e
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Module</p>
 
-    Bodule.use [<span class="string">'bodule@0.1.0/c'</span>], (require, exports, module) -&gt;
-        c = require <span class="string">'bodule@0.1.0/c'</span> 
-        console.log c</pre></div></div>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'module'</span>, (require, exports, module)-&gt;
+
+    util = require <span class="string">'util'</span>
+    EventEmmiter = require <span class="string">'emmiter'</span>
+    path = require <span class="string">'path'</span>
+
+    STATUS = 
+        INIT:       <span class="number">0</span>
+        FETCHING:   <span class="number">1</span>
+        SAVED:      <span class="number">2</span>
+        LOADING:    <span class="number">3</span>
+        LOADED:     <span class="number">4</span>
+        EXECUTING:  <span class="number">5</span>
+        EXECUTED:   <span class="number">6</span>
+
+    moduleData = <span class="literal">null</span>
+
+    <span class="class"><span class="keyword">class</span> <span class="title">Module</span> <span class="keyword">extends</span> <span class="title">EventEmmiter</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Static</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@modules</span> = {}
+        <span class="property">@get</span>: (id, deps, factory)-&gt;
+            module = <span class="property">@modules</span>[id]
+            <span class="keyword">if</span> module
+                module.deps = deps.map (dep)-&gt;
+                    dep = path.resolve id, dep
+                    dep = path.normalize dep
+                module.factory = factory
+            <span class="keyword">else</span>
+                module = <span class="keyword">new</span> Module id, deps, factory
+            <span class="property">@modules</span>[id] = module
+        <span class="property">@define</span>: (id, deps, factory)-&gt;
+            moduleData =
+                deps: deps,
+                factory: factory
+        <span class="property">@require</span>: (id)=&gt;
+            module = <span class="property">@modules</span>[id]
+            module.exports <span class="keyword">or</span> module.exports = <span class="property">@use</span> module
+        <span class="property">@use</span>: (module)-&gt;
+            module.exec()
+            module.exports
+        <span class="property">@save</span>: (id, deps, factory)-&gt;
+            module = <span class="property">@get</span> id, deps, factory
+            module.state = STATUS.SAVED
+            module.loadDeps()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Instance</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        constructor: (<span class="property">@id</span>, <span class="property">@deps</span>=[], <span class="property">@factory</span>)-&gt;
+            <span class="property">@deps</span> = <span class="property">@deps</span>.map (dep)=&gt;
+                dep = path.resolve <span class="property">@id</span>, dep
+                dep = path.normalize dep
+            <span class="property">@exports</span> = <span class="literal">null</span>
+            <span class="property">@state</span> = STATUS.INIT
+            <span class="keyword">super</span>
+        exec: -&gt;
+            <span class="function"><span class="title">__require</span></span> = (id)=&gt;
+                id = path.resolve <span class="property">@id</span>, id
+                id = path.normalize id
+                Module.require id
+            __module = {}
+            __exports = __module.exports = {}
+            <span class="property">@factory</span>(__require, __exports, __module)
+            <span class="property">@exports</span> = __module.exports
+        loadDeps: ()-&gt;
+            depModules = []
+            <span class="keyword">if</span> <span class="property">@state</span> &gt; STATUS.LOADING
+                <span class="keyword">return</span>
+            <span class="property">@state</span> = STATUS.LOADING
+
+            <span class="keyword">for</span> dep <span class="keyword">in</span> <span class="property">@deps</span>
+                module = Module.get dep
+                module.<span class="literal">on</span> <span class="string">'loaded'</span>, <span class="property">@isDepsLoaded</span>
+                depModules.push module
+            <span class="property">@depModules</span> = depModules
+            <span class="property">@isDepsLoaded</span>()
+
+            <span class="keyword">for</span> module <span class="keyword">in</span> depModules
+                <span class="keyword">if</span> module.state &lt; STATUS.FETCHING
+                    module.fetch()
+                <span class="keyword">else</span> <span class="keyword">if</span> moudle.state <span class="keyword">is</span> STATUS.SAVED
+                    module.loadDeps()
+        isDepsLoaded: =&gt;
+            loaded = <span class="literal">true</span>
+            <span class="keyword">for</span> module <span class="keyword">in</span> <span class="property">@depModules</span>
+                <span class="keyword">if</span> module.state &lt; STATUS.LOADED
+                    loaded = <span class="literal">false</span>
+            <span class="keyword">if</span> loaded
+                <span class="property">@state</span> = STATUS.LOADED
+                <span class="property">@emit</span> <span class="string">'loaded'</span>
+        fetch: -&gt;
+            <span class="keyword">if</span> <span class="property">@state</span> &lt; STATUS.FETCHING
+                util.loadScript <span class="property">@id</span>, =&gt;
+                    Module.save <span class="property">@id</span>, moduleData.deps, moduleData.factory
+                <span class="keyword">return</span>
+            <span class="property">@state</span> = STATUS.FETCHING
+
+    module.exports = Module</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Config</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'config'</span>, (require, exports, module)-&gt;
+    path = require <span class="string">'path'</span>
+    config =
+        cwd: path.dirname location.href
+
+    exports.<span class="function"><span class="title">config</span></span> = (conf)-&gt;
+        <span class="keyword">if</span> arguments.length <span class="keyword">is</span> <span class="number">0</span>
+            config
+        <span class="keyword">else</span>
+            <span class="keyword">for</span> key, value <span class="keyword">of</span> conf
+                config[key] = value
+            config</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Bodule</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'bodule'</span>, (require, exports, module)-&gt;
+
+    Module = require <span class="string">'module'</span>
+    util  = require <span class="string">'util'</span>
+    path = require <span class="string">'path'</span>
+    config = require <span class="string">'config'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Bodule API</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    Bodule =
+        use: (deps, factory)-&gt;
+            id = path.resolve config.config().cwd, <span class="string">"./_use_<span class="subst">#{util.guid()}</span>"</span>
+            id = path.normalize id
+            module = Module.get id, deps, factory
+            module.<span class="literal">on</span> <span class="string">'loaded'</span>, -&gt;
+                Module.use module
+            module.loadDeps()
+        define: (id, deps, factory)-&gt;
+            Module.define id, deps, factory
+        Module: Module
+
+    module.exports = Bodule</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>API</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__use (require)-&gt;
+
+    Bodule = require <span class="string">'bodule'</span>
+
+    window.Bodule = Bodule
+    window.define = ()-&gt;
+        Bodule.define.apply(Bodule, arguments)</pre></div></div>
             
         </li>
         

@@ -1,5 +1,4 @@
 # BODULE-ENGINE
-# =============
 # 
 # **BODULE-ENGINE** is a runtime, in which all of the wrapper `node` module are running.
 # it's a part of  solution for packing `node` module to browser.
