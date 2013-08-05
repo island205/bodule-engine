@@ -29,9 +29,24 @@
     return module.exports;
   };
 
-  __define('util', function(require, exports, module) {
-    var guid, head, i, loadScript;
+  __define('global', function(require, exports) {
+    exports.anonymousModule = null;
+    return exports.STATUS = {
+      INIT: 0,
+      FETCHING: 1,
+      SAVED: 2,
+      LOADING: 3,
+      LOADED: 4,
+      EXECUTING: 5,
+      EXECUTED: 6
+    };
+  });
 
+  __define('util', function(require, exports, module) {
+    var Module, global, guid, head, i, loadScript;
+
+    global = require('global');
+    Module = require('module');
     head = document.getElementsByTagName('head')[0];
     loadScript = function(id) {
       var node;
@@ -41,7 +56,10 @@
       node.async = true;
       node.src = "" + id + ".js";
       node.onload = function() {
-        return head.removeChild(node);
+        head.removeChild(node);
+        module = Module.get(id, global.anonymousModule.deps, global.anonymousModule.factory);
+        module.state = STATUS.SAVED;
+        return module.loadDeps();
       };
       return head.appendChild(node);
     };
@@ -51,6 +69,47 @@
     };
     exports.loadScript = loadScript;
     return exports.guid = guid;
+  });
+
+  __define('path', function(require, exports, module) {
+    var DIRNAME_REG, DOT_REG, DOUBLE_DOT_REG, MORE_THAN_TWO_SLASH_REG, ROOT_DIR_REG, dirname, normalize, resolve;
+
+    DIRNAME_REG = /[^?#]*\//;
+    ROOT_DIR_REG = /^.*?\/\/.*?\//;
+    MORE_THAN_TWO_SLASH_REG = /([^:]\/)(\/{1,})/;
+    DOT_REG = /\/\.\//;
+    DOUBLE_DOT_REG = /\/[^/]+\/\.\.\//;
+    dirname = function(path) {
+      return path.match(DIRNAME_REG)[0];
+    };
+    resolve = function(from, to) {
+      var fisrt, match, path;
+
+      fisrt = to.charAt(0);
+      if (fisrt === '.') {
+        path = dirname(from) + to;
+      }
+      if (fisrt === '/') {
+        match = from.match(ROOT_DIR_REG);
+        path = match[0] + to.substring(0);
+      }
+      return path;
+    };
+    normalize = function(path) {
+      while (path.match(MORE_THAN_TWO_SLASH_REG)) {
+        path = path.replace(MORE_THAN_TWO_SLASH_REG, '$1');
+      }
+      while (path.match(DOT_REG)) {
+        path = path.replace(DOT_REG, '/');
+      }
+      while (path.match(DOUBLE_DOT_REG)) {
+        path = path.replace(DOUBLE_DOT_REG, '/');
+      }
+      return path;
+    };
+    exports.dirname = dirname;
+    exports.resolve = resolve;
+    return exports.normalize = normalize;
   });
 
   __define('emmiter', function(require, exports, module) {
@@ -96,19 +155,13 @@
   });
 
   __define('module', function(require, exports, module) {
-    var EventEmmiter, Module, STATUS, util;
+    var EventEmmiter, Module, STATUS, global, path, util;
 
     util = require('util');
     EventEmmiter = require('emmiter');
-    STATUS = {
-      INIT: 0,
-      FETCHING: 1,
-      SAVED: 2,
-      LOADING: 3,
-      LOADED: 4,
-      EXECUTING: 5,
-      EXECUTED: 6
-    };
+    path = require('path');
+    global = require('global');
+    STATUS = global.STATUS;
     Module = (function(_super) {
       __extends(Module, _super);
 
@@ -117,7 +170,10 @@
       Module.get = function(id, deps, factory) {
         module = this.modules[id];
         if (module) {
-          module.deps = deps;
+          module.deps = deps.map(function(dep) {
+            dep = path.resolve(id, dep);
+            return dep = path.normalize(dep);
+          });
           module.factory = factory;
         } else {
           module = new Module(id, deps, factory);
@@ -126,10 +182,10 @@
       };
 
       Module.define = function(id, deps, factory) {
-        module = this.get(id, deps, factory);
-        module.state = STATUS.SAVED;
-        module.loadDeps();
-        return module;
+        return global.anonymousModule = {
+          deps: deps,
+          factory: factory
+        };
       };
 
       Module.require = function(id) {
@@ -144,10 +200,16 @@
       };
 
       function Module(id, deps, factory) {
+        var _this = this;
+
         this.id = id;
         this.deps = deps != null ? deps : [];
         this.factory = factory;
         this.isDepsLoaded = __bind(this.isDepsLoaded, this);
+        this.deps = this.deps.map(function(dep) {
+          dep = path.resolve(_this.id, dep);
+          return dep = path.normalize(dep);
+        });
         this.exports = null;
         this.state = STATUS.INIT;
         Module.__super__.constructor.apply(this, arguments);
@@ -215,14 +277,42 @@
     return module.exports = Module;
   });
 
+  __define('config', function(require, exports, module) {
+    var config, path;
+
+    path = require('path');
+    config = {
+      cwd: path.dirname(location.href)
+    };
+    return exports.config = function(conf) {
+      var key, value;
+
+      if (arguments.length === 0) {
+        return config;
+      } else {
+        for (key in conf) {
+          value = conf[key];
+          config[key] = value;
+        }
+        return config;
+      }
+    };
+  });
+
   __define('bodule', function(require, exports, module) {
-    var Bodule, Module, util;
+    var Bodule, Module, config, path, util;
 
     Module = require('module');
     util = require('util');
+    path = require('path');
+    config = require('config');
     Bodule = {
       use: function(deps, factory) {
-        module = Module.get('_use_' + util.guid(), deps, factory);
+        var id;
+
+        id = path.resolve(config.config().cwd, "./_use_" + (util.guid()));
+        id = path.normalize(id);
+        module = Module.get(id, deps, factory);
         module.on('loaded', function() {
           return Module.use(module);
         });

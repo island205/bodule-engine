@@ -23,10 +23,20 @@ __use = (factory)->
     factory __require, exports, module
     module.exports
 
-
+__define 'global', (require, exports)->
+    exports.anonymousModule = null
+    exports.STATUS = 
+        INIT:       0
+        FETCHING:   1
+        SAVED:      2
+        LOADING:    3
+        LOADED:     4
+        EXECUTING:  5
+        EXECUTED:   6
 # Util
 __define 'util', (require, exports, module)->
-
+    global = require 'global'
+    Module = require 'module'
     # Script loader util
     head = document.getElementsByTagName('head')[0]
     loadScript = (id) ->
@@ -36,6 +46,10 @@ __define 'util', (require, exports, module)->
         node.src = "#{id}.js"
         node.onload = ->
             head.removeChild node
+            module = Module.get id, global.anonymousModule.deps, global.anonymousModule.factory
+            module.state = STATUS.SAVED
+            module.loadDeps()
+             
         head.appendChild node
     
     # Guid
@@ -53,6 +67,10 @@ __define 'path', (require, exports, module)->
 
     DIRNAME_REG = /[^?#]*\//
     ROOT_DIR_REG = /^.*?\/\/.*?\//
+    MORE_THAN_TWO_SLASH_REG = /([^:]\/)(\/{1,})/
+    DOT_REG = /\/\.\//
+    DOUBLE_DOT_REG = /\/[^/]+\/\.\.\//
+
 
     dirname = (path)->
         path.match(DIRNAME_REG)[0]
@@ -60,15 +78,21 @@ __define 'path', (require, exports, module)->
     resolve = (from, to)->
         fisrt = to.charAt 0
         if fisrt is '.'
-            path = dirname(path) + to
+            path = dirname(from) + to
         if fisrt is '/'
             match = from.match ROOT_DIR_REG
-            path = m[0] + id.substring(0)
+            path = match[0] + to.substring(0)
         path
 
+    normalize = (path)->
+        path = path.replace MORE_THAN_TWO_SLASH_REG, '$1' while path.match MORE_THAN_TWO_SLASH_REG
+        path = path.replace DOT_REG, '/' while path.match DOT_REG
+        path = path.replace DOUBLE_DOT_REG, '/' while path.match DOUBLE_DOT_REG
+        path
 
     exports.dirname = dirname
-    exports.resolve = resovle
+    exports.resolve = resolve
+    exports.normalize = normalize
 
 # EventEmmiter
 __define 'emmiter', (require, exports, module)->
@@ -98,15 +122,10 @@ __define 'module', (require, exports, module)->
 
     util = require 'util'
     EventEmmiter = require 'emmiter'
+    path = require 'path'
+    global = require 'global'
 
-    STATUS =
-        INIT:       0
-        FETCHING:   1
-        SAVED:      2
-        LOADING:    3
-        LOADED:     4
-        EXECUTING:  5
-        EXECUTED:   6
+    STATUS = global.STATUS
 
     class Module extends EventEmmiter
         # Static
@@ -114,16 +133,21 @@ __define 'module', (require, exports, module)->
         @get: (id, deps, factory)->
             module = @modules[id]
             if module
-                module.deps = deps
+                module.deps = deps.map (dep)->
+                    dep = path.resolve id, dep
+                    dep = path.normalize dep
                 module.factory = factory
             else
                 module = new Module id, deps, factory
             @modules[id] = module
         @define: (id, deps, factory)->
-            module = @get id, deps, factory
-            module.state = STATUS.SAVED
-            module.loadDeps()
-            module
+            global.anonymousModule =
+                deps: deps
+                factory: factory
+            # module = @get id, deps, factory
+            # module.state = STATUS.SAVED
+            # module.loadDeps()
+            # module
         @require: (id)=>
             module = @modules[id]
             module.exports or module.exports = @use module
@@ -134,6 +158,9 @@ __define 'module', (require, exports, module)->
         
         # Instance
         constructor: (@id, @deps=[], @factory)->
+            @deps = @deps.map (dep)=>
+                dep = path.resolve @id, dep
+                dep = path.normalize dep
             @exports = null
             @state = STATUS.INIT
             super
@@ -198,7 +225,8 @@ __define 'bodule', (require, exports, module)->
     # Bodule API
     Bodule =
         use: (deps, factory)->
-            id = path.resolve config.config().cwd, '/'
+            id = path.resolve config.config().cwd, "./_use_#{util.guid()}"
+            id = path.normalize id
             module = Module.get id, deps, factory
             module.on 'loaded', ->
                 Module.use module
