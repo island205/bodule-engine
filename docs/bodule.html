@@ -27,9 +27,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <p>BODULE-ENGINE</p>
-<p><strong>BODULE-ENGINE</strong> is a runtime, in which all of the wrapper <code>node</code> module are running.
-it&#39;s a part of  solution for packing <code>node</code> module to browser.</p>
+              <p><strong>bodule-engine</strong> is a runtime, in which all of the wrapper <code>node</code> module are running.
+it&#39;s a part of  solution for packing <code>node</code> module to browser.
+it learn from <a href="http://seajs.org/">Sea.js</a> a lot.</p>
 
             </div>
             
@@ -42,26 +42,9 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>Seed runtime</p>
+              <p><strong>Seed runtime</strong></p>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>__modules = {}
-
-<span class="function"><span class="title">__require</span></span> = (id)-&gt;
-    module = __modules[id]
-    module.exports <span class="keyword">or</span> module.exports = __use module.factory
-
-<span class="function"><span class="title">__define</span></span> = (id, factory)-&gt;
-    __modules[id] =
-        id: id
-        factory:factory
-
-<span class="function"><span class="title">__use</span></span> = (factory)-&gt;
-    module = {}
-    exports = module.exports = {}
-    factory __require, exports, module
-    module.exports</pre></div></div>
             
         </li>
         
@@ -72,11 +55,10 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>Util</p>
+              <p>This is a <strong>private</strong> CommonJS runtime for <code>bodule.js</code>.
+I use <code>node</code> module style to orgnize code.</p>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>__define <span class="string">'util'</span>, (require, exports, module)-&gt;</pre></div></div>
             
         </li>
         
@@ -87,21 +69,11 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <p>Script loader util</p>
+              <p><code>__modules</code> for store private module like <code>util</code>,<code>path</code>, and so on.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    head = document.getElementsByTagName(<span class="string">'head'</span>)[<span class="number">0</span>]
-    <span class="function"><span class="title">loadScript</span></span> = (id, callback) -&gt;
-        node = document.createElement <span class="string">'script'</span>
-        node.type = <span class="string">'text/javascript'</span>
-        node.async = <span class="literal">true</span>
-        node.src = <span class="string">"<span class="subst">#{id}</span>.js"</span>
-        node.<span class="function"><span class="title">onload</span></span> = -&gt;
-            callback()
-            head.removeChild node
-             
-        head.appendChild node</pre></div></div>
+            <div class="content"><div class='highlight'><pre>__modules = {}</pre></div></div>
             
         </li>
         
@@ -112,7 +84,156 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
-              <p>Guid</p>
+              <p><code>__require</code> is used for getting module&#39;s API: <code>exports</code> property.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="title">__require</span></span> = (id)-&gt;
+    module = __modules[id]
+    module.exports <span class="keyword">or</span> module.exports = __use module.factory</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Define a module, save module in <code>__modules</code>. use <code>id</code> to refer them.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="title">__define</span></span> = (id, factory)-&gt;
+    __modules[id] =
+        id: id
+        factory:factory</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p><code>__use</code> to start a CommonJS runtime, or get a module&#39;s exports.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="title">__use</span></span> = (factory)-&gt;
+    module = {}
+    exports = module.exports = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>In factory <code>call</code>, <code>this</code> is global</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    factory __require, exports, module
+    module.exports</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p><strong>util</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'util'</span>, (require, exports, module)-&gt;
+
+    head = document.getElementsByTagName(<span class="string">'head'</span>)[<span class="number">0</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p><strong>util.loadScript</strong></p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Pass a <code>callback</code>, when module is loaded, saving the deps and factory of the module<br>to <code>Bodule.modules[id]</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">loadScript</span></span> = (id, callback) -&gt;
+        node = document.createElement <span class="string">'script'</span>
+        node.type = <span class="string">'text/javascript'</span>
+        node.async = <span class="literal">true</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p><code>id</code> is a absolute URI like <code>http://example.com/a</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        node.src = <span class="string">"<span class="subst">#{id}</span>.js"</span>
+        node.<span class="function"><span class="title">onload</span></span> = -&gt;
+            callback()
+            head.removeChild node
+             
+        head.appendChild node</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p><strong>util.guid</strong></p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p><code>guid()</code> will return <code>1,2,3,4,5,6...</code></p>
 
             </div>
             
@@ -126,39 +247,134 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-6">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
-              <p>Path</p>
+              <p><strong>path</strong></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>__define <span class="string">'path'</span>, (require, exports, module)-&gt;
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Deal with url path</p>
 
-    DIRNAME_REG = <span class="regexp">/[^?#]*\//</span>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'path'</span>, (require, exports, module)-&gt;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Head to <a href="http://www.regexper.com/"><a href="http://www.regexper.com/">http://www.regexper.com/</a></a>, visual regexp.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    DIRNAME_REG = <span class="regexp">/[^?#]*\//</span>
     ROOT_DIR_REG = <span class="regexp">/^.*?\/\/.*?\//</span>
     MORE_THAN_TWO_SLASH_REG = <span class="regexp">/([^:]\/)(\/{1,})/</span>
     DOT_REG = <span class="regexp">/\/\.\//</span>
-    DOUBLE_DOT_REG = <span class="regexp">/\/[^/]+\/\.\.\//</span>
+    DOUBLE_DOT_REG = <span class="regexp">/\/[^/]+\/\.\.\//</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p><strong>path.dirname</strong></p>
 
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p><code>https://github.com/Bodule/bodule-engine</code> =&gt; <code>https://github.com/Bodule/</code> or<br><code>/Bodule/bodule-engine</code> =&gt; <code>/Bodule/</code></p>
 
-    <span class="function"><span class="title">dirname</span></span> = (path)-&gt;
-        path.match(DIRNAME_REG)[<span class="number">0</span>]
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">dirname</span></span> = (path)-&gt;
+        path.match(DIRNAME_REG)[<span class="number">0</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p><strong>path.resolve</strong></p>
+<p><code>resolve(&#39;https://github.com/Bodule/bodule-engine&#39;, &#39;./path&#39;)</code> =&gt;<br>    <code>&#39;https://github.com/Bodule/path&#39;</code></p>
+<p><code>resolve(&#39;https://github.com/Bodule/bodule-engine&#39;, &#39;/path&#39;)</code> =&gt;<br>    <code>&#39;https://github.com/path&#39;</code></p>
+<p><code>resolve(&#39;https://github.com/Bodule/bodule-engine&#39;, &#39;path&#39;)</code> =&gt;<br>    <code>&#39;path&#39;</code></p>
 
-    <span class="function"><span class="title">resolve</span></span> = (from, to)-&gt;
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">resolve</span></span> = (from, to)-&gt;
         fisrt = to.charAt <span class="number">0</span>
         <span class="keyword">if</span> fisrt <span class="keyword">is</span> <span class="string">'.'</span>
             path = dirname(from) + to
         <span class="keyword">if</span> fisrt <span class="keyword">is</span> <span class="string">'/'</span>
             match = from.match ROOT_DIR_REG
             path = match[<span class="number">0</span>] + to.substring(<span class="number">0</span>)
-        path
+        path</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p><strong>path.normalize</strong></p>
+<p>Remove <code>/./</code> <code>//</code> <code>/../</code> and so on.</p>
 
-    <span class="function"><span class="title">normalize</span></span> = (path)-&gt;
-        path = path.replace MORE_THAN_TWO_SLASH_REG, <span class="string">'$1'</span> <span class="keyword">while</span> path.match MORE_THAN_TWO_SLASH_REG
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">normalize</span></span> = (path)-&gt;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>JavaScript doesn&#39;t support <code>(?&lt;!exp)</code>, so use group.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        path = path.replace MORE_THAN_TWO_SLASH_REG, <span class="string">'$1'</span> <span class="keyword">while</span> path.match MORE_THAN_TWO_SLASH_REG
         path = path.replace DOT_REG, <span class="string">'/'</span> <span class="keyword">while</span> path.match DOT_REG
         path = path.replace DOUBLE_DOT_REG, <span class="string">'/'</span> <span class="keyword">while</span> path.match DOUBLE_DOT_REG
         path
@@ -170,13 +386,13 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-7">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
-              <p>EventEmmiter</p>
+              <p><strong>EventEmmiter</strong></p>
 
             </div>
             
@@ -191,8 +407,22 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         <span class="literal">on</span>: (event, listener)-&gt;
             <span class="property">@listeners</span>(event).push listener
         emit: (event)-&gt;
-            args = []
-            listeners = <span class="property">@listeners</span>(event).slice()
+            args = []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>copy <code>Array</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            listeners = <span class="property">@listeners</span>(event).slice()
             <span class="keyword">if</span> arguments.length &gt; <span class="number">1</span>
                 args = Array::slice arguments
                 args.shift()
@@ -204,13 +434,13 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-8">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
-              <p>Module</p>
+              <p><strong>Module</strong></p>
 
             </div>
             
@@ -218,36 +448,91 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
 
     util = require <span class="string">'util'</span>
     EventEmmiter = require <span class="string">'emmiter'</span>
-    path = require <span class="string">'path'</span>
+    path = require <span class="string">'path'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p><strong>STATUS</strong></p>
+<p>The state of module&#39;s life.</p>
+<p>INIT: 0, The module is created<br>FETCHING: 1, The <code>module.uri</code> is being fetched<br>SAVED: 2,  The meta data has been saved to cachedMods<br>LOADING: 3, The <code>module.dependencies</code> are being loaded<br>LOADED: 4, The module are ready to execute<br>EXECUTING: 5, The module is being executed<br>EXECUTED: 6 The <code>module.exports</code> is available  </p>
 
-    STATUS = 
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    STATUS = 
         INIT:       <span class="number">0</span>
         FETCHING:   <span class="number">1</span>
         SAVED:      <span class="number">2</span>
         LOADING:    <span class="number">3</span>
         LOADED:     <span class="number">4</span>
         EXECUTING:  <span class="number">5</span>
-        EXECUTED:   <span class="number">6</span>
-
-    moduleData = <span class="literal">null</span>
-
-    <span class="class"><span class="keyword">class</span> <span class="title">Module</span> <span class="keyword">extends</span> <span class="title">EventEmmiter</span></span></pre></div></div>
+        EXECUTED:   <span class="number">6</span></pre></div></div>
             
         </li>
         
         
-        <li id="section-9">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
-              <p>Static</p>
+              <p>Store the deps and factory of the loading module. When <code>onload</code> fire, save to the <code>Bodule.modules</code><br>refer as <code>id</code></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="property">@modules</span> = {}
-        <span class="property">@get</span>: (id, deps, factory)-&gt;
+            <div class="content"><div class='highlight'><pre>    moduleData = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p><strong>class Module</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="class"><span class="keyword">class</span> <span class="title">Module</span> <span class="keyword">extends</span> <span class="title">EventEmmiter</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>Static method or property, like <code>Module.get</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@modules</span> = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>Get module by id. if there is already a module with <code>id</code>, save <code>deps</code> and <code>factory</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@get</span>: (id, deps, factory)-&gt;
             module = <span class="property">@modules</span>[id]
             <span class="keyword">if</span> module
                 module.deps = deps.map (dep)-&gt;
@@ -256,18 +541,88 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
                 module.factory = factory
             <span class="keyword">else</span>
                 module = <span class="keyword">new</span> Module id, deps, factory
-            <span class="property">@modules</span>[id] = module
-        <span class="property">@define</span>: (id, deps, factory)-&gt;
+            <span class="property">@modules</span>[id] = module</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Define a open API for defining a module.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@define</span>: (id, deps, factory)-&gt;
             moduleData =
                 deps: deps,
-                factory: factory
-        <span class="property">@require</span>: (id)=&gt;
-            module = <span class="property">@modules</span>[id]
-            module.exports <span class="keyword">or</span> module.exports = <span class="property">@use</span> module
-        <span class="property">@use</span>: (module)-&gt;
+                factory: factory</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Get the <code>module.exports</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@require</span>: (id)=&gt;
+            module = <span class="property">@modules</span>[id]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>If module.exports is not avalible, <code>use</code> it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            module.exports <span class="keyword">or</span> module.exports = <span class="property">@use</span> module</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>Execute a module, return the <code>module.exports</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@use</span>: (module)-&gt;
             module.exec()
-            module.exports
-        <span class="property">@save</span>: (id, deps, factory)-&gt;
+            module.exports</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>Save module&#39;s deps and factroy, and load deps.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="property">@save</span>: (id, deps, factory)-&gt;
             module = <span class="property">@get</span> id, deps, factory
             module.state = STATUS.SAVED
             module.loadDeps()</pre></div></div>
@@ -275,13 +630,14 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-10">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
-              <p>Instance</p>
+              <p>Instance method.</p>
+<p>Init a module</p>
 
             </div>
             
@@ -289,10 +645,38 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
             <span class="property">@deps</span> = <span class="property">@deps</span>.map (dep)=&gt;
                 dep = path.resolve <span class="property">@id</span>, dep
                 dep = path.normalize dep
-            <span class="property">@exports</span> = <span class="literal">null</span>
-            <span class="property">@state</span> = STATUS.INIT
-            <span class="keyword">super</span>
-        exec: -&gt;
+            <span class="property">@exports</span> = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Set state to 0.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="property">@state</span> = STATUS.INIT
+            <span class="keyword">super</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Run the module.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        exec: -&gt;
             <span class="function"><span class="title">__require</span></span> = (id)=&gt;
                 id = path.resolve <span class="property">@id</span>, id
                 id = path.normalize id
@@ -302,20 +686,76 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
             <span class="property">@factory</span>(__require, __exports, __module)
             <span class="property">@exports</span> = __module.exports
         loadDeps: ()-&gt;
-            depModules = []
-            <span class="keyword">if</span> <span class="property">@state</span> &gt; STATUS.LOADING
+            depModules = []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>If this module is loading, just return</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> <span class="property">@state</span> &gt; STATUS.LOADING
                 <span class="keyword">return</span>
             <span class="property">@state</span> = STATUS.LOADING
 
             <span class="keyword">for</span> dep <span class="keyword">in</span> <span class="property">@deps</span>
-                module = Module.get dep
-                module.<span class="literal">on</span> <span class="string">'loaded'</span>, <span class="property">@isDepsLoaded</span>
-                depModules.push module
-            <span class="property">@depModules</span> = depModules
-            <span class="property">@isDepsLoaded</span>()
+                module = Module.get dep</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>when the dependence module is loaded, check all the deps of this module is loaded</p>
 
-            <span class="keyword">for</span> module <span class="keyword">in</span> depModules
-                <span class="keyword">if</span> module.state &lt; STATUS.FETCHING
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                module.<span class="literal">on</span> <span class="string">'loaded'</span>, <span class="property">@isDepsLoaded</span>
+                depModules.push module
+            <span class="property">@depModules</span> = depModules</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>Just do a check, Maybe all the deps are loaded</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="property">@isDepsLoaded</span>()
+
+            <span class="keyword">for</span> module <span class="keyword">in</span> depModules</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>If the dep isn&#39;t fetched, fetch it<br>if the dep is saved, start load it&#39;s deps</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="keyword">if</span> module.state &lt; STATUS.FETCHING
                     module.fetch()
                 <span class="keyword">else</span> <span class="keyword">if</span> moudle.state <span class="keyword">is</span> STATUS.SAVED
                     module.loadDeps()
@@ -325,12 +765,40 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
                 <span class="keyword">if</span> module.state &lt; STATUS.LOADED
                     loaded = <span class="literal">false</span>
             <span class="keyword">if</span> loaded
-                <span class="property">@state</span> = STATUS.LOADED
-                <span class="property">@emit</span> <span class="string">'loaded'</span>
+                <span class="property">@state</span> = STATUS.LOADED</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <p>If all deps are loaded, fire <code>loaded</code> event.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="property">@emit</span> <span class="string">'loaded'</span>
         fetch: -&gt;
             <span class="keyword">if</span> <span class="property">@state</span> &lt; STATUS.FETCHING
-                util.loadScript <span class="property">@id</span>, =&gt;
-                    Module.save <span class="property">@id</span>, moduleData.deps, moduleData.factory
+                util.loadScript <span class="property">@id</span>, =&gt;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>When the <code>onload</code> is called, save meta data of current module.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    Module.save <span class="property">@id</span>, moduleData.deps, moduleData.factory
                 <span class="keyword">return</span>
             <span class="property">@state</span> = STATUS.FETCHING
 
@@ -339,20 +807,34 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-11">
+        <li id="section-45">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-45">&#182;</a>
               </div>
-              <p>Config</p>
+              <p><strong>Config</strong></p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>__define <span class="string">'config'</span>, (require, exports, module)-&gt;
     path = require <span class="string">'path'</span>
-    config =
-        cwd: path.dirname location.href
+    config =</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p><code>config.cwd</code> is the page location.<br>if page&#39;s url is <code>http://coffeescript.org/documentation/docs/rewriter.html</code><br><code>cwd</code> is <code>http://coffeescript.org/documentation/docs/</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        cwd: path.dirname location.href
 
     exports.<span class="function"><span class="title">config</span></span> = (conf)-&gt;
         <span class="keyword">if</span> arguments.length <span class="keyword">is</span> <span class="number">0</span>
@@ -365,13 +847,13 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-12">
+        <li id="section-47">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-47">&#182;</a>
               </div>
-              <p>Bodule</p>
+              <p><strong>Bodule</strong></p>
 
             </div>
             
@@ -385,25 +867,82 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-13">
+        <li id="section-48">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-48">&#182;</a>
               </div>
-              <p>Bodule API</p>
+              <p><strong>Bodule API</strong></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    Bodule =
-        use: (deps, factory)-&gt;
-            id = path.resolve config.config().cwd, <span class="string">"./_use_<span class="subst">#{util.guid()}</span>"</span>
+            <div class="content"><div class='highlight'><pre>    Bodule =</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-49">&#182;</a>
+              </div>
+              <p><strong>Bodule.use</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        use: (deps, factory)-&gt;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-50">&#182;</a>
+              </div>
+              <p>Treat use factory as a no id module<br>Give it a random id, let it become a normal module.</p>
+<p>If cwd is <code>http://coffeescript.org/documentation/docs/</code> so<br>id is <code>http://coffeescript.org/documentation/docs/_use_5</code><br>5 is generate by <code>guid</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            id = path.resolve config.config().cwd, <span class="string">"./_use_<span class="subst">#{util.guid()}</span>"</span>
             id = path.normalize id
             module = Module.get id, deps, factory
-            module.<span class="literal">on</span> <span class="string">'loaded'</span>, -&gt;
-                Module.use module
-            module.loadDeps()
-        define: (id, deps, factory)-&gt;
+            module.<span class="literal">on</span> <span class="string">'loaded'</span>, -&gt;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-51">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-51">&#182;</a>
+              </div>
+              <p>When loaded, just use it, open the runtime.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                Module.use module
+            module.loadDeps()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-52">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-52">&#182;</a>
+              </div>
+              <p><strong>Bodule.define</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        define: (id, deps, factory)-&gt;
             Module.define id, deps, factory
         Module: Module
 
@@ -412,13 +951,13 @@ it&#39;s a part of  solution for packing <code>node</code> module to browser.</p
         </li>
         
         
-        <li id="section-14">
+        <li id="section-53">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-53">&#182;</a>
               </div>
-              <p>API</p>
+              <p><strong>Public API</strong></p>
 
             </div>
             
