@@ -54,15 +54,15 @@ __define 'util', (require, exports, module)->
              
         head.appendChild node
     
-    # **util.guid**
+    # **util.cid**
 
-    # `guid()` will return `1,2,3,4,5,6...`
+    # `cid()` will return `1,2,3,4,5,6...`
     i = 0
-    guid = ->
+    cid = ->
         ++i
 
     exports.loadScript = loadScript
-    exports.guid = guid
+    exports.cid = cid
 
 
 # **path**
@@ -307,8 +307,8 @@ __define 'bodule', (require, exports, module)->
             #
             # If cwd is `http://coffeescript.org/documentation/docs/` so  
             # id is `http://coffeescript.org/documentation/docs/_use_5`  
-            # 5 is generate by `guid`.
-            id = path.resolve config.config().cwd, "./_use_#{util.guid()}"
+            # 5 is generate by `cid`.
+            id = path.resolve config.config().cwd, "./_use_#{util.cid()}"
             id = path.normalize id
             module = Module.get id, deps, factory
             module.on 'loaded', ->

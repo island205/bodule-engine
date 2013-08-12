@@ -220,7 +220,7 @@ I use <code>node</code> module style to orgnize code.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
-              <p><strong>util.guid</strong></p>
+              <p><strong>util.cid</strong></p>
 
             </div>
             
@@ -233,16 +233,16 @@ I use <code>node</code> module style to orgnize code.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
-              <p><code>guid()</code> will return <code>1,2,3,4,5,6...</code></p>
+              <p><code>cid()</code> will return <code>1,2,3,4,5,6...</code></p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>    i = <span class="number">0</span>
-    <span class="function"><span class="title">guid</span></span> = -&gt;
+    <span class="function"><span class="title">cid</span></span> = -&gt;
         ++i
 
     exports.loadScript = loadScript
-    exports.guid = guid</pre></div></div>
+    exports.cid = cid</pre></div></div>
             
         </li>
         
@@ -904,11 +904,11 @@ I use <code>node</code> module style to orgnize code.</p>
                 <a class="pilcrow" href="#section-50">&#182;</a>
               </div>
               <p>Treat use factory as a no id module<br>Give it a random id, let it become a normal module.</p>
-<p>If cwd is <code>http://coffeescript.org/documentation/docs/</code> so<br>id is <code>http://coffeescript.org/documentation/docs/_use_5</code><br>5 is generate by <code>guid</code>.</p>
+<p>If cwd is <code>http://coffeescript.org/documentation/docs/</code> so<br>id is <code>http://coffeescript.org/documentation/docs/_use_5</code><br>5 is generate by <code>cid</code>.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>            id = path.resolve config.config().cwd, <span class="string">"./_use_<span class="subst">#{util.guid()}</span>"</span>
+            <div class="content"><div class='highlight'><pre>            id = path.resolve config.config().cwd, <span class="string">"./_use_<span class="subst">#{util.cid()}</span>"</span>
             id = path.normalize id
             module = Module.get id, deps, factory
             module.<span class="literal">on</span> <span class="string">'loaded'</span>, -&gt;</pre></div></div>

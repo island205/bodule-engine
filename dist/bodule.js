@@ -30,7 +30,7 @@
   };
 
   __define('util', function(require, exports, module) {
-    var guid, head, i, loadScript;
+    var cid, head, i, loadScript;
 
     head = document.getElementsByTagName('head')[0];
     loadScript = function(id, callback) {
@@ -47,11 +47,11 @@
       return head.appendChild(node);
     };
     i = 0;
-    guid = function() {
+    cid = function() {
       return ++i;
     };
     exports.loadScript = loadScript;
-    return exports.guid = guid;
+    return exports.cid = cid;
   });
 
   __define('path', function(require, exports, module) {
@@ -325,7 +325,7 @@
       use: function(deps, factory) {
         var id;
 
-        id = path.resolve(config.config().cwd, "./_use_" + (util.guid()));
+        id = path.resolve(config.config().cwd, "./_use_" + (util.cid()));
         id = path.normalize(id);
         module = Module.get(id, deps, factory);
         module.on('loaded', function() {
