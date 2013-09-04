@@ -10,6 +10,7 @@ module.exports = (grunt) ->
                     join: true
                 files:
                     'dist/bodule.js': ['src/*.coffee']
+                    'bodule.org/bodule.js': ['src/*.coffee']
 
     grunt.loadNpmTasks 'grunt-contrib-coffee'
     grunt.loadNpmTasks 'grunt-contrib-watch'

@@ -35,21 +35,25 @@ __use = (factory)->
 # **util**
 __define 'util', (require, exports, module)->
 
+    log = require 'log'
+
     head = document.getElementsByTagName('head')[0]
     
     # **util.loadScript**
 
     # Pass a `callback`, when module is loaded, saving the deps and factory of the module  
     # to `Bodule.modules[id]`.
-    loadScript = (id, callback) ->
+    loadScript = (id) ->
+        log "loadScript #{id}"
         node = document.createElement 'script'
         node.type = 'text/javascript'
         node.async = true
         
         # `id` is a absolute URI like `http://example.com/a`
-        node.src = "#{id}.js"
+        if not /\.js$/.test id
+          id = "#{id}.js"
+        node.src = id
         node.onload = ->
-            callback()
             head.removeChild node
              
         head.appendChild node
@@ -61,8 +65,20 @@ __define 'util', (require, exports, module)->
     cid = ->
         ++i
 
+    toString = Object::toString
+    for type in ['Arguments', 'Function', 'String', 'Array', 'Number', 'Date', 'RegExp']
+      do (type)->
+        exports["is#{type}"] = (o)->
+          toString.call(o) is "[object #{type}]"
     exports.loadScript = loadScript
     exports.cid = cid
+
+# **debug**
+
+__define 'log', (require, exports, module)->
+  debug = true
+  module.exports = ->
+    console.log.apply(console, arguments) if debug
 
 
 # **path**
@@ -148,6 +164,8 @@ __define 'module', (require, exports, module)->
     util = require 'util'
     EventEmmiter = require 'emmiter'
     path = require 'path'
+    config = require 'config'
+    log = require 'log'
 
     # **STATUS**
     #
@@ -179,27 +197,36 @@ __define 'module', (require, exports, module)->
         @modules = {}
         # Get module by id. if there is already a module with `id`, save `deps` and `factory`
         @get: (id, deps, factory)->
+            if not /\.js$/.test id
+              id = "#{id}.js"
             module = @modules[id]
             if module
+                log "save module #{id}"
                 module.deps = deps.map (dep)->
                     dep = path.resolve id, dep
                     dep = path.normalize dep
                 module.factory = factory
             else
+                log "init module #{id}"
                 module = new Module id, deps, factory
             @modules[id] = module
         # Define a open API for defining a module.
         @define: (id, deps, factory)->
-            moduleData =
-                deps: deps,
-                factory: factory
+          id = path.resolve config.config().cwd, id
+          id = path.normalize id
+          if not /\.js$/.test id
+            id = "#{id}.js"
+          log "define #{id} module"
+          @save id, deps, factory
         # Get the `module.exports`
         @require: (id)=>
+            log "require module #{id}"
             module = @modules[id]
             # If module.exports is not avalible, `use` it.
             module.exports or module.exports = @use module
         # Execute a module, return the `module.exports`
         @use: (module)->
+            log "use module #{module.id}"
             module.exec()
             module.exports
         # Save module's deps and factroy, and load deps.
@@ -224,6 +251,8 @@ __define 'module', (require, exports, module)->
             __require = (id)=>
                 id = path.resolve @id, id
                 id = path.normalize id
+                if not /\.js$/.test id
+                  id = "#{id}.js"
                 Module.require id
             __module = {}
             __exports = __module.exports = {}
@@ -236,6 +265,7 @@ __define 'module', (require, exports, module)->
                 return
             @state = STATUS.LOADING
 
+            log "load module #{@id}'s deps"
             for dep in @deps
                 module = Module.get dep
                 # when the dependence module is loaded, check all the deps of this module is loaded
@@ -260,14 +290,14 @@ __define 'module', (require, exports, module)->
             if loaded
                 @state = STATUS.LOADED
                 # If all deps are loaded, fire `loaded` event.
+                log "module #{@id} is loaded"
                 @emit 'loaded'
-        fetch: ->
+        fetch: ()->
+            log "fetch module #{@id}"
             if @state < STATUS.FETCHING
-                util.loadScript @id, =>
-                    # When the `onload` is called, save meta data of current module.
-                    Module.save @id, moduleData.deps, moduleData.factory
+                util.loadScript @id
+                @state = STATUS.FETCHING
                 return
-            @state = STATUS.FETCHING
 
     module.exports = Module
 
@@ -308,15 +338,28 @@ __define 'bodule', (require, exports, module)->
             # If cwd is `http://coffeescript.org/documentation/docs/` so  
             # id is `http://coffeescript.org/documentation/docs/_use_5`  
             # 5 is generate by `cid`.
-            id = path.resolve config.config().cwd, "./_use_#{util.cid()}"
+            if util.isString deps
+              id = deps
+              deps = []
+              factory = null
+              noCallback = true
+            else
+              id = "./_use_#{util.cid()}"
+            id = path.resolve config.config().cwd, id
             id = path.normalize id
-            module = Module.get id, deps, factory
-            module.on 'loaded', ->
+            mod = Module.get id, deps, factory
+            mod.on 'loaded', ->
                 # When loaded, just use it, open the runtime.
-                Module.use module
-            module.loadDeps()
+                Module.use mod
+            if noCallback
+              mod.fetch()
+            else
+              mod.loadDeps()
         # **Bodule.define**
         define: (id, deps, factory)->
+          if util.isFunction deps
+            factory = deps
+            deps = []
             Module.define id, deps, factory
         Module: Module
 
