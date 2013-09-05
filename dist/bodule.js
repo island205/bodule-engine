@@ -76,7 +76,8 @@
   });
 
   __define('path', function(require, exports, module) {
-    var DIRNAME_REG, DOT_REG, DOUBLE_DOT_REG, MORE_THAN_TWO_SLASH_REG, ROOT_DIR_REG, dirname, normalize, resolve;
+    var DIRNAME_REG, DOT_REG, DOUBLE_DOT_REG, MORE_THAN_TWO_SLASH_REG, ROOT_DIR_REG, dirname, log, normalize, resolve;
+    log = require('log');
     DIRNAME_REG = /[^?#]*\//;
     ROOT_DIR_REG = /^.*?\/\/.*?\//;
     MORE_THAN_TWO_SLASH_REG = /([^:]\/)(\/{1,})/;
@@ -87,6 +88,7 @@
     };
     resolve = function(from, to) {
       var fisrt, match, path;
+      log("resolve " + from + " to " + to);
       fisrt = to.charAt(0);
       if (fisrt === '.') {
         path = dirname(from) + to;
@@ -98,6 +100,7 @@
       return path;
     };
     normalize = function(path) {
+      log("normalize " + path);
       while (path.match(MORE_THAN_TWO_SLASH_REG)) {
         path = path.replace(MORE_THAN_TWO_SLASH_REG, '$1');
       }
@@ -176,31 +179,18 @@
       Module.modules = {};
 
       Module.get = function(id, deps, factory) {
-        if (!/\.js$/.test(id)) {
-          id = "" + id + ".js";
-        }
         module = this.modules[id];
         if (module) {
-          log("save module " + id);
-          module.deps = deps.map(function(dep) {
-            dep = path.resolve(id, dep);
-            return dep = path.normalize(dep);
-          });
-          module.factory = factory;
+          return module;
         } else {
           log("init module " + id);
           module = new Module(id, deps, factory);
+          return this.modules[id] = module;
         }
-        return this.modules[id] = module;
       };
 
       Module.define = function(id, deps, factory) {
-        id = path.resolve(config.config().cwd, id);
-        id = path.normalize(id);
-        if (!/\.js$/.test(id)) {
-          id = "" + id + ".js";
-        }
-        log("define " + id + " module");
+        id = this.resolve(id);
         return this.save(id, deps, factory);
       };
 
@@ -217,9 +207,36 @@
       };
 
       Module.save = function(id, deps, factory) {
-        module = this.get(id, deps, factory);
+        var _this = this;
+        module = this.get(id);
+        log("save module " + id);
+        module.deps = deps.map(function(dep) {
+          return _this.resolve(dep);
+        });
+        module.factory = factory;
         module.state = STATUS.SAVED;
         return module.loadDeps();
+      };
+
+      Module.resolve = function(id) {
+        var conf, version, _ref;
+        conf = config.config();
+        if (!/^http:\/\/|^\.|^\//.test(id)) {
+          if (id.indexOf('@') === -1) {
+            id = "" + id + "/" + conf.bodule_modules.dependencies[id] + "/" + id;
+          } else {
+            _ref = id.split('@'), id = _ref[0], version = _ref[1];
+            id = "" + id + "/" + version + "/" + id;
+          }
+          conf = conf.bodule_modules;
+        }
+        id = conf.path + id;
+        id = path.resolve(conf.cwd, id);
+        id = path.normalize(id);
+        if (!/\.js$/.test(id)) {
+          id = "" + id + ".js";
+        }
+        return id;
       };
 
       function Module(id, deps, factory) {
@@ -229,8 +246,7 @@
         this.factory = factory;
         this.isDepsLoaded = __bind(this.isDepsLoaded, this);
         this.deps = this.deps.map(function(dep) {
-          dep = path.resolve(_this.id, dep);
-          return dep = path.normalize(dep);
+          return _this.resolve(dep);
         });
         this.exports = null;
         this.state = STATUS.INIT;
@@ -240,18 +256,18 @@
       Module.prototype.exec = function() {
         var __exports, __module,
           _this = this;
-        __require = function(id) {
-          id = path.resolve(_this.id, id);
-          id = path.normalize(id);
-          if (!/\.js$/.test(id)) {
-            id = "" + id + ".js";
-          }
-          return Module.require(id);
-        };
-        __module = {};
-        __exports = __module.exports = {};
-        this.factory(__require, __exports, __module);
-        return this.exports = __module.exports;
+        if (util.isFunction(this.factory)) {
+          __require = function(id) {
+            id = _this.resolve(id);
+            return Module.require(id);
+          };
+          __module = {};
+          __exports = __module.exports = {};
+          this.factory(__require, __exports, __module);
+          return this.exports = __module.exports;
+        } else {
+          return this.exports = this.factory;
+        }
       };
 
       Module.prototype.loadDeps = function() {
@@ -261,7 +277,6 @@
           return;
         }
         this.state = STATUS.LOADING;
-        log("load module " + this.id + "'s deps");
         _ref = this.deps;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           dep = _ref[_i];
@@ -310,6 +325,29 @@
         }
       };
 
+      Module.prototype.resolve = function(id) {
+        var boduleModules, conf, version, _ref;
+        log("module " + this.id + " resolve dep " + id);
+        if (!/^http:\/\/|^\.|^\//.test(id)) {
+          conf = config.config();
+          if (id.indexOf('@') === -1) {
+            id = "" + id + "/" + conf.bodule_modules.dependencies[id] + "/" + id;
+          } else {
+            _ref = id.split('@'), id = _ref[0], version = _ref[1];
+            id = "" + id + "/" + version + "/" + id;
+          }
+          boduleModules = conf.bodule_modules;
+          id = boduleModules.cwd + boduleModules.path + id;
+        } else {
+          id = path.resolve(this.id, id);
+        }
+        id = path.normalize(id);
+        if (!/\.js$/.test(id)) {
+          id = "" + id + ".js";
+        }
+        return id;
+      };
+
       return Module;
 
     }).call(this, EventEmmiter);
@@ -317,19 +355,34 @@
   });
 
   __define('config', function(require, exports, module) {
-    var config, path;
+    var config, path, util;
     path = require('path');
+    util = require('util');
     config = {
-      cwd: path.dirname(location.href)
+      cwd: path.dirname(location.href),
+      path: '',
+      bodule_modules: {
+        cwd: 'http://bodule.org/',
+        path: ''
+      }
     };
     return exports.config = function(conf) {
-      var key, value;
+      var k, key, v, value;
       if (arguments.length === 0) {
         return config;
       } else {
         for (key in conf) {
           value = conf[key];
-          config[key] = value;
+          if (util.isString(value) || util.isNumber(value)) {
+            config[key] = value;
+          } else if (util.isArray(value)) {
+            config[key].concat(value);
+          } else {
+            for (k in value) {
+              v = value[k];
+              config[key][k] = v;
+            }
+          }
         }
         return config;
       }
@@ -353,8 +406,7 @@
         } else {
           id = "./_use_" + (util.cid());
         }
-        id = path.resolve(config.config().cwd, id);
-        id = path.normalize(id);
+        id = Module.resolve(id);
         mod = Module.get(id, deps, factory);
         mod.on('loaded', function() {
           return Module.use(mod);
@@ -369,8 +421,14 @@
         if (util.isFunction(deps)) {
           factory = deps;
           deps = [];
-          return Module.define(id, deps, factory);
+        } else if (typeof factory === 'undefined') {
+          deps = [];
+          factory = deps;
         }
+        return Module.define(id, deps, factory);
+      },
+      "package": function(conf) {
+        return config.config(conf);
       },
       Module: Module
     };

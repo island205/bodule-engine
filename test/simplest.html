@@ -9,10 +9,14 @@
 	<script type="text/javascript">
 		Bodule.use('./a.js')
 		Bodule.use('/b.js')
-		Bodule.use(['/c.js', './d'], function (require, exports, module) {
-			var c = require('/c.js')
+		Bodule.use(['./c.js', './d'], function (require, exports, module) {
+			var c = require('./c.js')
 			var d = require('./d')
 			console.log(c + d)
+		})
+		Bodule.use(['./e'], function (require) {
+			var e = require('./e')
+			console.log(e)
 		})
 	</script>
 </body>

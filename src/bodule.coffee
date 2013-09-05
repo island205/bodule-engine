@@ -67,24 +67,26 @@ __define 'util', (require, exports, module)->
 
     toString = Object::toString
     for type in ['Arguments', 'Function', 'String', 'Array', 'Number', 'Date', 'RegExp']
-      do (type)->
-        exports["is#{type}"] = (o)->
-          toString.call(o) is "[object #{type}]"
+        do (type)->
+            exports["is#{type}"] = (o)->
+                toString.call(o) is "[object #{type}]"
     exports.loadScript = loadScript
     exports.cid = cid
 
 # **debug**
 
 __define 'log', (require, exports, module)->
-  debug = true
-  module.exports = ->
-    console.log.apply(console, arguments) if debug
+    debug = true
+    module.exports = ->
+        console.log.apply(console, arguments) if debug
 
 
 # **path**
 
 # Deal with url path
 __define 'path', (require, exports, module)->
+
+    log = require 'log'
     
     # Head to [http://www.regexper.com/](http://www.regexper.com/), visual regexp.
     DIRNAME_REG = /[^?#]*\//
@@ -111,6 +113,7 @@ __define 'path', (require, exports, module)->
     # `resolve('https://github.com/Bodule/bodule-engine', 'path')` =>  
     #     `'path'`
     resolve = (from, to)->
+        log "resolve #{from} to #{to}"
         fisrt = to.charAt 0
         if fisrt is '.'
             path = dirname(from) + to
@@ -123,6 +126,7 @@ __define 'path', (require, exports, module)->
     #
     # Remove `/./` `//` `/../` and so on.
     normalize = (path)->
+        log "normalize #{path}"
         # JavaScript doesn't support `(?<!exp)`, so use group.
         path = path.replace MORE_THAN_TWO_SLASH_REG, '$1' while path.match MORE_THAN_TWO_SLASH_REG
         path = path.replace DOT_REG, '/' while path.match DOT_REG
@@ -197,27 +201,17 @@ __define 'module', (require, exports, module)->
         @modules = {}
         # Get module by id. if there is already a module with `id`, save `deps` and `factory`
         @get: (id, deps, factory)->
-            if not /\.js$/.test id
-              id = "#{id}.js"
             module = @modules[id]
             if module
-                log "save module #{id}"
-                module.deps = deps.map (dep)->
-                    dep = path.resolve id, dep
-                    dep = path.normalize dep
-                module.factory = factory
+                module
             else
                 log "init module #{id}"
                 module = new Module id, deps, factory
-            @modules[id] = module
+                @modules[id] = module
         # Define a open API for defining a module.
         @define: (id, deps, factory)->
-          id = path.resolve config.config().cwd, id
-          id = path.normalize id
-          if not /\.js$/.test id
-            id = "#{id}.js"
-          log "define #{id} module"
-          @save id, deps, factory
+            id = @resolve id
+            @save id, deps, factory
         # Get the `module.exports`
         @require: (id)=>
             log "require module #{id}"
@@ -231,41 +225,59 @@ __define 'module', (require, exports, module)->
             module.exports
         # Save module's deps and factroy, and load deps.
         @save: (id, deps, factory)->
-            module = @get id, deps, factory
+            module = @get id
+            log "save module #{id}"
+            module.deps = deps.map (dep)=>
+                @resolve dep
+            module.factory = factory
             module.state = STATUS.SAVED
             module.loadDeps()
-
+        @resolve: (id)->
+            conf = config.config()
+            if not /^http:\/\/|^\.|^\//.test(id)
+                if id.indexOf('@') == -1
+                    id = "#{id}/#{conf.bodule_modules.dependencies[id]}/#{id}"
+                else
+                    [id, version] = id.split('@')
+                    id = "#{id}/#{version}/#{id}"
+                conf = conf.bodule_modules
+            id = conf.path + id
+            id = path.resolve conf.cwd, id
+            id = path.normalize id
+            if not /\.js$/.test id
+                id = "#{id}.js"
+            id
         # Instance method.
         #
         # Init a module
         constructor: (@id, @deps=[], @factory)->
             @deps = @deps.map (dep)=>
-                dep = path.resolve @id, dep
-                dep = path.normalize dep
+                @resolve dep
             @exports = null
             # Set state to 0.
             @state = STATUS.INIT
             super
         # Run the module.
         exec: ->
-            __require = (id)=>
-                id = path.resolve @id, id
-                id = path.normalize id
-                if not /\.js$/.test id
-                  id = "#{id}.js"
-                Module.require id
-            __module = {}
-            __exports = __module.exports = {}
-            @factory(__require, __exports, __module)
-            @exports = __module.exports
+            # Factory is Function
+            if util.isFunction @factory
+                __require = (id)=>
+                    id = @resolve id
+                    Module.require id
+                __module = {}
+                __exports = __module.exports = {}
+                @factory(__require, __exports, __module)
+                @exports = __module.exports
+
+            # `define(id, someThingNotFunction)`
+            else
+                @exports = @factory
         loadDeps: ()->
             depModules = []
             # If this module is loading, just return
             if @state > STATUS.LOADING
                 return
             @state = STATUS.LOADING
-
-            log "load module #{@id}'s deps"
             for dep in @deps
                 module = Module.get dep
                 # when the dependence module is loaded, check all the deps of this module is loaded
@@ -298,6 +310,23 @@ __define 'module', (require, exports, module)->
                 util.loadScript @id
                 @state = STATUS.FETCHING
                 return
+        resolve: (id)->
+            log "module #{@id} resolve dep #{id}"
+            if not /^http:\/\/|^\.|^\//.test(id)
+                conf = config.config()
+                if id.indexOf('@') == -1
+                    id = "#{id}/#{conf.bodule_modules.dependencies[id]}/#{id}"
+                else
+                    [id, version] = id.split('@')
+                    id = "#{id}/#{version}/#{id}"
+                boduleModules = conf.bodule_modules
+                id = boduleModules.cwd + boduleModules.path + id
+            else
+                id = path.resolve @id, id
+            id = path.normalize id
+            if not /\.js$/.test id
+                id = "#{id}.js"
+            id
 
     module.exports = Module
 
@@ -305,18 +334,29 @@ __define 'module', (require, exports, module)->
 # **Config**
 __define 'config', (require, exports, module)->
     path = require 'path'
+    util = require 'util'
     config =
         # `config.cwd` is the page location.  
         # if page's url is `http://coffeescript.org/documentation/docs/rewriter.html`  
         # `cwd` is `http://coffeescript.org/documentation/docs/`
         cwd: path.dirname location.href
+        path: ''
+        bodule_modules:
+            cwd: 'http://bodule.org/',
+            path: ''
 
     exports.config = (conf)->
         if arguments.length is 0
             config
         else
             for key, value of conf
-                config[key] = value
+                if util.isString(value) or util.isNumber(value)
+                    config[key] = value 
+                else if util.isArray value
+                    config[key].concat(value)
+                else
+                    for k, v of value
+                        config[key][k] = v
             config
 
 
@@ -339,28 +379,34 @@ __define 'bodule', (require, exports, module)->
             # id is `http://coffeescript.org/documentation/docs/_use_5`  
             # 5 is generate by `cid`.
             if util.isString deps
-              id = deps
-              deps = []
-              factory = null
-              noCallback = true
+                id = deps
+                deps = []
+                factory = null
+                noCallback = true
             else
-              id = "./_use_#{util.cid()}"
-            id = path.resolve config.config().cwd, id
-            id = path.normalize id
+                id = "./_use_#{util.cid()}"
+            id = Module.resolve id
             mod = Module.get id, deps, factory
             mod.on 'loaded', ->
                 # When loaded, just use it, open the runtime.
                 Module.use mod
             if noCallback
-              mod.fetch()
+                mod.fetch()
             else
-              mod.loadDeps()
+                mod.loadDeps()
         # **Bodule.define**
         define: (id, deps, factory)->
-          if util.isFunction deps
-            factory = deps
-            deps = []
+            # `define(id, factory)`
+            if util.isFunction deps
+                factory = deps
+                deps = []
+            # `define(id, somethingElseNotFunction)`
+            else if typeof factory is 'undefined'
+                deps = []
+                factory = deps
             Module.define id, deps, factory
+        package: (conf)->
+            config.config(conf)
         Module: Module
 
     module.exports = Bodule

@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>simplest</title>
+</head>
+<body>
+	<script type="text/javascript" src="http://bodule.org:3000/bodule.js"></script>
+	<script type="text/javascript">
+		Bodule.package({
+			cwd: 'http://bodule.org:8080/',
+			path: '/package/'
+		})
+		Bodule.use('./a.js')
+		Bodule.use('/b.js')
+		Bodule.use(['./c.js', './d'], function (require, exports, module) {
+			var c = require('./c.js')
+			var d = require('./d')
+			console.log(c + d)
+		})
+		Bodule.use(['./e'], function (require) {
+			var e = require('./e')
+			console.log(e)
+		})
+	</script>
+</body>
+</html>
