@@ -292,7 +292,7 @@ __define 'module', (require, exports, module)->
                 # if the dep is saved, start load it's deps
                 if module.state < STATUS.FETCHING
                     module.fetch()
-                else if moudle.state is STATUS.SAVED
+                else if module.state is STATUS.SAVED
                     module.loadDeps()
         isDepsLoaded: =>
             loaded = true

@@ -291,7 +291,7 @@
           module = depModules[_j];
           if (module.state < STATUS.FETCHING) {
             _results.push(module.fetch());
-          } else if (moudle.state === STATUS.SAVED) {
+          } else if (module.state === STATUS.SAVED) {
             _results.push(module.loadDeps());
           } else {
             _results.push(void 0);

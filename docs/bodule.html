@@ -187,9 +187,9 @@ I use <code>node</code> module style to orgnize code.</p>
 
     toString = Object::toString
     <span class="keyword">for</span> type <span class="keyword">in</span> [<span class="string">'Arguments'</span>, <span class="string">'Function'</span>, <span class="string">'String'</span>, <span class="string">'Array'</span>, <span class="string">'Number'</span>, <span class="string">'Date'</span>, <span class="string">'RegExp'</span>]
-      <span class="keyword">do</span> (type)-&gt;
-        exports[<span class="string">"is<span class="subst">#{type}</span>"</span>] = (o)-&gt;
-          toString.call(o) <span class="keyword">is</span> <span class="string">"[object <span class="subst">#{type}</span>]"</span>
+        <span class="keyword">do</span> (type)-&gt;
+            exports[<span class="string">"is<span class="subst">#{type}</span>"</span>] = (o)-&gt;
+                toString.call(o) <span class="keyword">is</span> <span class="string">"[object <span class="subst">#{type}</span>]"</span>
     exports.loadScript = loadScript
     exports.cid = cid</pre></div></div>
             
@@ -207,9 +207,9 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>__define <span class="string">'log'</span>, (require, exports, module)-&gt;
-  debug = <span class="literal">true</span>
-  module.<span class="function"><span class="title">exports</span></span> = -&gt;
-    console.log.apply(console, arguments) <span class="keyword">if</span> debug</pre></div></div>
+    debug = <span class="literal">true</span>
+    module.<span class="function"><span class="title">exports</span></span> = -&gt;
+        console.log.apply(console, arguments) <span class="keyword">if</span> debug</pre></div></div>
             
         </li>
         
@@ -225,7 +225,9 @@ I use <code>node</code> module style to orgnize code.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>__define <span class="string">'path'</span>, (require, exports, module)-&gt;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>__define <span class="string">'path'</span>, (require, exports, module)-&gt;
+
+    log = require <span class="string">'log'</span></pre></div></div>
             
         </li>
         
@@ -280,6 +282,7 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">resolve</span></span> = (from, to)-&gt;
+        log <span class="string">"resolve <span class="subst">#{from}</span> to <span class="subst">#{to}</span>"</span>
         fisrt = to.charAt <span class="number">0</span>
         <span class="keyword">if</span> fisrt <span class="keyword">is</span> <span class="string">'.'</span>
             path = dirname(from) + to
@@ -302,7 +305,8 @@ I use <code>node</code> module style to orgnize code.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">normalize</span></span> = (path)-&gt;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="function"><span class="title">normalize</span></span> = (path)-&gt;
+        log <span class="string">"normalize <span class="subst">#{path}</span>"</span></pre></div></div>
             
         </li>
         
@@ -478,19 +482,13 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="property">@get</span>: (id, deps, factory)-&gt;
-            <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/\.js$/</span>.test id
-              id = <span class="string">"<span class="subst">#{id}</span>.js"</span>
             module = <span class="property">@modules</span>[id]
             <span class="keyword">if</span> module
-                log <span class="string">"save module <span class="subst">#{id}</span>"</span>
-                module.deps = deps.map (dep)-&gt;
-                    dep = path.resolve id, dep
-                    dep = path.normalize dep
-                module.factory = factory
+                module
             <span class="keyword">else</span>
                 log <span class="string">"init module <span class="subst">#{id}</span>"</span>
                 module = <span class="keyword">new</span> Module id, deps, factory
-            <span class="property">@modules</span>[id] = module</pre></div></div>
+                <span class="property">@modules</span>[id] = module</pre></div></div>
             
         </li>
         
@@ -506,12 +504,8 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="property">@define</span>: (id, deps, factory)-&gt;
-          id = path.resolve config.config().cwd, id
-          id = path.normalize id
-          <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/\.js$/</span>.test id
-            id = <span class="string">"<span class="subst">#{id}</span>.js"</span>
-          log <span class="string">"define <span class="subst">#{id}</span> module"</span>
-          <span class="property">@save</span> id, deps, factory</pre></div></div>
+            id = <span class="property">@resolve</span> id
+            <span class="property">@save</span> id, deps, factory</pre></div></div>
             
         </li>
         
@@ -577,9 +571,28 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="property">@save</span>: (id, deps, factory)-&gt;
-            module = <span class="property">@get</span> id, deps, factory
+            module = <span class="property">@get</span> id
+            log <span class="string">"save module <span class="subst">#{id}</span>"</span>
+            module.deps = deps.map (dep)=&gt;
+                <span class="property">@resolve</span> dep
+            module.factory = factory
             module.state = STATUS.SAVED
-            module.loadDeps()</pre></div></div>
+            module.loadDeps()
+        <span class="property">@resolve</span>: (id)-&gt;
+            conf = config.config()
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/^http:\/\/|^\.|^\//</span>.test(id)
+                <span class="keyword">if</span> id.indexOf(<span class="string">'@'</span>) == -<span class="number">1</span>
+                    id = <span class="string">"<span class="subst">#{id}</span>/<span class="subst">#{conf.bodule_modules.dependencies[id]}</span>/<span class="subst">#{id}</span>"</span>
+                <span class="keyword">else</span>
+                    [id, version] = id.split(<span class="string">'@'</span>)
+                    id = <span class="string">"<span class="subst">#{id}</span>/<span class="subst">#{version}</span>/<span class="subst">#{id}</span>"</span>
+                conf = conf.bodule_modules
+            id = conf.path + id
+            id = path.resolve conf.cwd, id
+            id = path.normalize id
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/\.js$/</span>.test id
+                id = <span class="string">"<span class="subst">#{id}</span>.js"</span>
+            id</pre></div></div>
             
         </li>
         
@@ -597,8 +610,7 @@ I use <code>node</code> module style to orgnize code.</p>
             
             <div class="content"><div class='highlight'><pre>        constructor: (<span class="property">@id</span>, <span class="property">@deps</span>=[], <span class="property">@factory</span>)-&gt;
             <span class="property">@deps</span> = <span class="property">@deps</span>.map (dep)=&gt;
-                dep = path.resolve <span class="property">@id</span>, dep
-                dep = path.normalize dep
+                <span class="property">@resolve</span> dep
             <span class="property">@exports</span> = <span class="literal">null</span></pre></div></div>
             
         </li>
@@ -646,16 +658,13 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> util.isFunction <span class="property">@factory</span>
-              <span class="function"><span class="title">__require</span></span> = (id)=&gt;
-                  id = path.resolve <span class="property">@id</span>, id
-                  id = path.normalize id
-                  <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/\.js$/</span>.test id
-                    id = <span class="string">"<span class="subst">#{id}</span>.js"</span>
-                  Module.require id
-              __module = {}
-              __exports = __module.exports = {}
-              <span class="property">@factory</span>(__require, __exports, __module)
-              <span class="property">@exports</span> = __module.exports</pre></div></div>
+                <span class="function"><span class="title">__require</span></span> = (id)=&gt;
+                    id = <span class="property">@resolve</span> id
+                    Module.require id
+                __module = {}
+                __exports = __module.exports = {}
+                <span class="property">@factory</span>(__require, __exports, __module)
+                <span class="property">@exports</span> = __module.exports</pre></div></div>
             
         </li>
         
@@ -671,7 +680,7 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="keyword">else</span>
-              <span class="property">@exports</span> = <span class="property">@factory</span>
+                <span class="property">@exports</span> = <span class="property">@factory</span>
         loadDeps: ()-&gt;
             depModules = []</pre></div></div>
             
@@ -691,8 +700,6 @@ I use <code>node</code> module style to orgnize code.</p>
             <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> <span class="property">@state</span> &gt; STATUS.LOADING
                 <span class="keyword">return</span>
             <span class="property">@state</span> = STATUS.LOADING
-
-            log <span class="string">"load module <span class="subst">#{@id}</span>'s deps"</span>
             <span class="keyword">for</span> dep <span class="keyword">in</span> <span class="property">@deps</span>
                 module = Module.get dep</pre></div></div>
             
@@ -745,7 +752,7 @@ I use <code>node</code> module style to orgnize code.</p>
             
             <div class="content"><div class='highlight'><pre>                <span class="keyword">if</span> module.state &lt; STATUS.FETCHING
                     module.fetch()
-                <span class="keyword">else</span> <span class="keyword">if</span> moudle.state <span class="keyword">is</span> STATUS.SAVED
+                <span class="keyword">else</span> <span class="keyword">if</span> module.state <span class="keyword">is</span> STATUS.SAVED
                     module.loadDeps()
         isDepsLoaded: =&gt;
             loaded = <span class="literal">true</span>
@@ -776,6 +783,23 @@ I use <code>node</code> module style to orgnize code.</p>
                 util.loadScript <span class="property">@id</span>
                 <span class="property">@state</span> = STATUS.FETCHING
                 <span class="keyword">return</span>
+        resolve: (id)-&gt;
+            log <span class="string">"module <span class="subst">#{@id}</span> resolve dep <span class="subst">#{id}</span>"</span>
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/^http:\/\/|^\.|^\//</span>.test(id)
+                conf = config.config()
+                <span class="keyword">if</span> id.indexOf(<span class="string">'@'</span>) == -<span class="number">1</span>
+                    id = <span class="string">"<span class="subst">#{id}</span>/<span class="subst">#{conf.bodule_modules.dependencies[id]}</span>/<span class="subst">#{id}</span>"</span>
+                <span class="keyword">else</span>
+                    [id, version] = id.split(<span class="string">'@'</span>)
+                    id = <span class="string">"<span class="subst">#{id}</span>/<span class="subst">#{version}</span>/<span class="subst">#{id}</span>"</span>
+                boduleModules = conf.bodule_modules
+                id = boduleModules.cwd + boduleModules.path + id
+            <span class="keyword">else</span>
+                id = path.resolve <span class="property">@id</span>, id
+            id = path.normalize id
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="regexp">/\.js$/</span>.test id
+                id = <span class="string">"<span class="subst">#{id}</span>.js"</span>
+            id
 
     module.exports = Module</pre></div></div>
             
@@ -794,6 +818,7 @@ I use <code>node</code> module style to orgnize code.</p>
             
             <div class="content"><div class='highlight'><pre>__define <span class="string">'config'</span>, (require, exports, module)-&gt;
     path = require <span class="string">'path'</span>
+    util = require <span class="string">'util'</span>
     config =</pre></div></div>
             
         </li>
@@ -810,13 +835,23 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        cwd: path.dirname location.href
+        path: <span class="string">''</span>
+        bodule_modules:
+            cwd: <span class="string">'http://bodule.org/'</span>,
+            path: <span class="string">''</span>
 
     exports.<span class="function"><span class="title">config</span></span> = (conf)-&gt;
         <span class="keyword">if</span> arguments.length <span class="keyword">is</span> <span class="number">0</span>
             config
         <span class="keyword">else</span>
             <span class="keyword">for</span> key, value <span class="keyword">of</span> conf
-                config[key] = value
+                <span class="keyword">if</span> util.isString(value) <span class="keyword">or</span> util.isNumber(value)
+                    config[key] = value 
+                <span class="keyword">else</span> <span class="keyword">if</span> util.isArray value
+                    config[key].concat(value)
+                <span class="keyword">else</span>
+                    <span class="keyword">for</span> k, v <span class="keyword">of</span> value
+                        config[key][k] = v
             config</pre></div></div>
             
         </li>
@@ -884,14 +919,13 @@ I use <code>node</code> module style to orgnize code.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> util.isString deps
-              id = deps
-              deps = []
-              factory = <span class="literal">null</span>
-              noCallback = <span class="literal">true</span>
+                id = deps
+                deps = []
+                factory = <span class="literal">null</span>
+                noCallback = <span class="literal">true</span>
             <span class="keyword">else</span>
-              id = <span class="string">"./_use_<span class="subst">#{util.cid()}</span>"</span>
-            id = path.resolve config.config().cwd, id
-            id = path.normalize id
+                id = <span class="string">"./_use_<span class="subst">#{util.cid()}</span>"</span>
+            id = Module.resolve id
             mod = Module.get id, deps, factory
             mod.<span class="literal">on</span> <span class="string">'loaded'</span>, -&gt;</pre></div></div>
             
@@ -910,9 +944,9 @@ I use <code>node</code> module style to orgnize code.</p>
             
             <div class="content"><div class='highlight'><pre>                Module.use mod
             <span class="keyword">if</span> noCallback
-              mod.fetch()
+                mod.fetch()
             <span class="keyword">else</span>
-              mod.loadDeps()</pre></div></div>
+                mod.loadDeps()</pre></div></div>
             
         </li>
         
@@ -942,9 +976,9 @@ I use <code>node</code> module style to orgnize code.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="keyword">if</span> util.isFunction deps
-            factory = deps
-            deps = []</pre></div></div>
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> util.isFunction deps
+                factory = deps
+                deps = []</pre></div></div>
             
         </li>
         
@@ -959,10 +993,12 @@ I use <code>node</code> module style to orgnize code.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">typeof</span> factory <span class="keyword">is</span> <span class="string">'undefined'</span>
-            deps = []
-            factory = deps
-          Module.define id, deps, factory
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">typeof</span> factory <span class="keyword">is</span> <span class="string">'undefined'</span>
+                deps = []
+                factory = deps
+            Module.define id, deps, factory
+        package: (conf)-&gt;
+            config.config(conf)
         Module: Module
 
     module.exports = Bodule</pre></div></div>
