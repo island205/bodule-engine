@@ -1,33 +1,34 @@
 (function() {
-  var __define, __modules, __require, __use,
+  var define, modules, require, use,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  __modules = {};
+  modules = {};
 
-  __require = function(id) {
+  require = function(id) {
     var module;
-    module = __modules[id];
-    return module.exports || (module.exports = __use(module.factory));
+    module = modules[id];
+    return module.exports || (module.exports = use([], module.factory));
   };
 
-  __define = function(id, factory) {
-    return __modules[id] = {
+  define = function(id, deps, factory) {
+    return modules[id] = {
       id: id,
+      deps: deps,
       factory: factory
     };
   };
 
-  __use = function(factory) {
+  use = function(deps, factory) {
     var exports, module;
     module = {};
     exports = module.exports = {};
-    factory(__require, exports, module);
+    factory(require, exports, module);
     return module.exports;
   };
 
-  __define('util', function(require, exports, module) {
+  define('util', ['log'], function(require, exports, module) {
     var cid, head, i, loadScript, log, toString, type, _fn, _i, _len, _ref;
     log = require('log');
     head = document.getElementsByTagName('head')[0];
@@ -65,7 +66,7 @@
     return exports.cid = cid;
   });
 
-  __define('log', function(require, exports, module) {
+  define('log', [], function(require, exports, module) {
     var debug;
     debug = true;
     return module.exports = function() {
@@ -75,7 +76,7 @@
     };
   });
 
-  __define('path', function(require, exports, module) {
+  define('path', ['log'], function(require, exports, module) {
     var DIRNAME_REG, DOT_REG, DOUBLE_DOT_REG, MORE_THAN_TWO_SLASH_REG, ROOT_DIR_REG, dirname, log, normalize, resolve;
     log = require('log');
     DIRNAME_REG = /[^?#]*\//;
@@ -117,7 +118,7 @@
     return exports.normalize = normalize;
   });
 
-  __define('emmiter', function(require, exports, module) {
+  define('emmiter', [], function(require, exports, module) {
     var EventEmmiter;
     EventEmmiter = (function() {
       function EventEmmiter() {
@@ -156,7 +157,7 @@
     return module.exports = EventEmmiter;
   });
 
-  __define('module', function(require, exports, module) {
+  define('module', ['util', 'emmiter', 'path', 'config', 'log'], function(require, exports, module) {
     var EventEmmiter, Module, STATUS, config, log, moduleData, path, util;
     util = require('util');
     EventEmmiter = require('emmiter');
@@ -254,7 +255,7 @@
       }
 
       Module.prototype.exec = function() {
-        var __exports, __module,
+        var __exports, __module, __require,
           _this = this;
         if (util.isFunction(this.factory)) {
           __require = function(id) {
@@ -354,7 +355,7 @@
     return module.exports = Module;
   });
 
-  __define('config', function(require, exports, module) {
+  define('config', ['path', 'util'], function(require, exports, module) {
     var config, path, util;
     path = require('path');
     util = require('util');
@@ -389,7 +390,7 @@
     };
   });
 
-  __define('bodule', function(require, exports, module) {
+  define('bodule', ['module', 'util', 'path', 'config'], function(require, exports, module) {
     var Bodule, Module, config, path, util;
     Module = require('module');
     util = require('util');
@@ -435,7 +436,7 @@
     return module.exports = Bodule;
   });
 
-  __use(function(require) {
+  use(['bodule'], function(require) {
     var Bodule;
     Bodule = require('bodule');
     window.Bodule = Bodule;

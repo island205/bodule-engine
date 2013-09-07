@@ -9,31 +9,32 @@
 # I use `node` module style to orgnize code.
 
 # `__modules` for store private module like `util`,`path`, and so on.
-__modules = {}
+modules = {}
 
 # `__require` is used for getting module's API: `exports` property.
-__require = (id)->
-    module = __modules[id]
-    module.exports or module.exports = __use module.factory
+require = (id)->
+    module = modules[id]
+    module.exports or module.exports = use [], module.factory
 
 # Define a module, save module in `__modules`. use `id` to refer them.
-__define = (id, factory)->
-    __modules[id] =
+define = (id, deps, factory)->
+    modules[id] =
         id: id
+        deps: deps
         factory:factory
 
 # `__use` to start a CommonJS runtime, or get a module's exports.
-__use = (factory)->
+use = (deps, factory)->
     module = {}
     exports = module.exports = {}
 
     # In factory `call`, `this` is global
-    factory __require, exports, module
+    factory require, exports, module
     module.exports
 
 
 # **util**
-__define 'util', (require, exports, module)->
+define 'util', ['log'], (require, exports, module)->
 
     log = require 'log'
 
@@ -75,7 +76,7 @@ __define 'util', (require, exports, module)->
 
 # **debug**
 
-__define 'log', (require, exports, module)->
+define 'log', [], (require, exports, module)->
     debug = true
     module.exports = ->
         console.log.apply(console, arguments) if debug
@@ -84,7 +85,7 @@ __define 'log', (require, exports, module)->
 # **path**
 
 # Deal with url path
-__define 'path', (require, exports, module)->
+define 'path', ['log'], (require, exports, module)->
 
     log = require 'log'
     
@@ -139,7 +140,7 @@ __define 'path', (require, exports, module)->
 
 
 # **EventEmmiter**
-__define 'emmiter', (require, exports, module)->
+define 'emmiter', [], (require, exports, module)->
 
     class EventEmmiter
         constructor: ->
@@ -163,7 +164,7 @@ __define 'emmiter', (require, exports, module)->
  
 
 # **Module**
-__define 'module', (require, exports, module)->
+define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports, module)->
 
     util = require 'util'
     EventEmmiter = require 'emmiter'
@@ -332,7 +333,7 @@ __define 'module', (require, exports, module)->
 
 
 # **Config**
-__define 'config', (require, exports, module)->
+define 'config', ['path', 'util'], (require, exports, module)->
     path = require 'path'
     util = require 'util'
     config =
@@ -361,7 +362,7 @@ __define 'config', (require, exports, module)->
 
 
 # **Bodule**
-__define 'bodule', (require, exports, module)->
+define 'bodule', ['module', 'util', 'path', 'config'], (require, exports, module)->
 
     Module = require 'module'
     util  = require 'util'
@@ -413,7 +414,7 @@ __define 'bodule', (require, exports, module)->
 
 
 # **Public API**
-__use (require)->
+use ['bodule'], (require)->
 
     Bodule = require 'bodule'
 
