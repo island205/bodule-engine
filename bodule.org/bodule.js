@@ -1,5 +1,6 @@
 (function() {
   var define, modules, require, use,
+    __slice = [].slice,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -34,7 +35,7 @@
     head = document.getElementsByTagName('head')[0];
     loadScript = function(id) {
       var node;
-      log("loadScript " + id);
+      log("loadScript " + id, 3);
       node = document.createElement('script');
       node.type = 'text/javascript';
       node.async = true;
@@ -67,11 +68,17 @@
   });
 
   define('log', [], function(require, exports, module) {
-    var debug;
+    var debug, level;
     debug = true;
+    level = 3;
     return module.exports = function() {
-      if (debug) {
-        return console.log.apply(console, arguments);
+      var args, l, _i;
+      args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), l = arguments[_i++];
+      if (l == null) {
+        l = 0;
+      }
+      if (debug && l >= level) {
+        return console.log.apply(console, args);
       }
     };
   });
@@ -89,7 +96,7 @@
     };
     resolve = function(from, to) {
       var fisrt, match, path;
-      log("resolve " + from + " to " + to);
+      log("resolve " + from + " to " + to, 0);
       fisrt = to.charAt(0);
       if (fisrt === '.') {
         path = dirname(from) + to;
@@ -101,7 +108,7 @@
       return path;
     };
     normalize = function(path) {
-      log("normalize " + path);
+      log("normalize " + path, 0);
       while (path.match(MORE_THAN_TWO_SLASH_REG)) {
         path = path.replace(MORE_THAN_TWO_SLASH_REG, '$1');
       }
@@ -184,7 +191,7 @@
         if (module) {
           return module;
         } else {
-          log("init module " + id);
+          log("init module " + id, 3);
           module = new Module(id, deps, factory);
           return this.modules[id] = module;
         }
@@ -196,13 +203,13 @@
       };
 
       Module.require = function(id) {
-        log("require module " + id);
+        log("require module " + id, 3);
         module = Module.modules[id];
         return module.exports || (module.exports = Module.use(module));
       };
 
       Module.use = function(module) {
-        log("use module " + module.id);
+        log("use module " + module.id, 3);
         module.exec();
         return module.exports;
       };
@@ -210,7 +217,7 @@
       Module.save = function(id, deps, factory) {
         var _this = this;
         module = this.get(id);
-        log("save module " + id);
+        log("save module " + id, 3);
         module.deps = deps.map(function(dep) {
           return _this.resolve(dep);
         });
@@ -227,7 +234,11 @@
             id = "" + id + "/" + conf.bodule_modules.dependencies[id] + "/" + id;
           } else {
             _ref = id.split('@'), id = _ref[0], version = _ref[1];
-            id = "" + id + "/" + version + "/" + id;
+            if (version.indexOf('/') > -1) {
+              id = "" + id + "/" + version;
+            } else {
+              id = "" + id + "/" + version + "/" + id;
+            }
           }
           conf = conf.bodule_modules;
         }
@@ -313,13 +324,13 @@
         }
         if (loaded) {
           this.state = STATUS.LOADED;
-          log("module " + this.id + " is loaded");
+          log("module " + this.id + " is loaded", 2);
           return this.emit('loaded');
         }
       };
 
       Module.prototype.fetch = function() {
-        log("fetch module " + this.id);
+        log("fetch module " + this.id, 3);
         if (this.state < STATUS.FETCHING) {
           util.loadScript(this.id);
           this.state = STATUS.FETCHING;
@@ -328,7 +339,7 @@
 
       Module.prototype.resolve = function(id) {
         var boduleModules, conf, version, _ref;
-        log("module " + this.id + " resolve dep " + id);
+        log("module " + this.id + " resolve dep " + id, 2);
         if (!/^http:\/\/|^\.|^\//.test(id)) {
           conf = config.config();
           if (id.indexOf('@') === -1) {

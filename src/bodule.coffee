@@ -45,7 +45,7 @@ define 'util', ['log'], (require, exports, module)->
     # Pass a `callback`, when module is loaded, saving the deps and factory of the module  
     # to `Bodule.modules[id]`.
     loadScript = (id) ->
-        log "loadScript #{id}"
+        log "loadScript #{id}", 3
         node = document.createElement 'script'
         node.type = 'text/javascript'
         node.async = true
@@ -78,8 +78,9 @@ define 'util', ['log'], (require, exports, module)->
 
 define 'log', [], (require, exports, module)->
     debug = true
-    module.exports = ->
-        console.log.apply(console, arguments) if debug
+    level = 3
+    module.exports = (args..., l = 0)->
+        console.log.apply(console, args) if debug && l >= level
 
 
 # **path**
@@ -114,7 +115,7 @@ define 'path', ['log'], (require, exports, module)->
     # `resolve('https://github.com/Bodule/bodule-engine', 'path')` =>  
     #     `'path'`
     resolve = (from, to)->
-        log "resolve #{from} to #{to}"
+        log "resolve #{from} to #{to}", 0
         fisrt = to.charAt 0
         if fisrt is '.'
             path = dirname(from) + to
@@ -127,7 +128,7 @@ define 'path', ['log'], (require, exports, module)->
     #
     # Remove `/./` `//` `/../` and so on.
     normalize = (path)->
-        log "normalize #{path}"
+        log "normalize #{path}", 0
         # JavaScript doesn't support `(?<!exp)`, so use group.
         path = path.replace MORE_THAN_TWO_SLASH_REG, '$1' while path.match MORE_THAN_TWO_SLASH_REG
         path = path.replace DOT_REG, '/' while path.match DOT_REG
@@ -206,7 +207,7 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
             if module
                 module
             else
-                log "init module #{id}"
+                log "init module #{id}", 3
                 module = new Module id, deps, factory
                 @modules[id] = module
         # Define a open API for defining a module.
@@ -215,19 +216,19 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
             @save id, deps, factory
         # Get the `module.exports`
         @require: (id)=>
-            log "require module #{id}"
+            log "require module #{id}", 3
             module = @modules[id]
             # If module.exports is not avalible, `use` it.
             module.exports or module.exports = @use module
         # Execute a module, return the `module.exports`
         @use: (module)->
-            log "use module #{module.id}"
+            log "use module #{module.id}", 3
             module.exec()
             module.exports
         # Save module's deps and factroy, and load deps.
         @save: (id, deps, factory)->
             module = @get id
-            log "save module #{id}"
+            log "save module #{id}", 3
             module.deps = deps.map (dep)=>
                 @resolve dep
             module.factory = factory
@@ -240,7 +241,14 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
                     id = "#{id}/#{conf.bodule_modules.dependencies[id]}/#{id}"
                 else
                     [id, version] = id.split('@')
-                    id = "#{id}/#{version}/#{id}"
+                    
+                    # backbone@1.0.0
+                    if version.indexOf('/') > -1
+                        id = "#{id}/#{version}"
+                    # backbone@1.0.0/backbone.js
+                    else
+                        id = "#{id}/#{version}/#{id}"
+
                 conf = conf.bodule_modules
             id = conf.path + id
             id = path.resolve conf.cwd, id
@@ -303,16 +311,16 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
             if loaded
                 @state = STATUS.LOADED
                 # If all deps are loaded, fire `loaded` event.
-                log "module #{@id} is loaded"
+                log "module #{@id} is loaded", 2
                 @emit 'loaded'
         fetch: ()->
-            log "fetch module #{@id}"
+            log "fetch module #{@id}", 3
             if @state < STATUS.FETCHING
                 util.loadScript @id
                 @state = STATUS.FETCHING
                 return
         resolve: (id)->
-            log "module #{@id} resolve dep #{id}"
+            log "module #{@id} resolve dep #{id}", 2
             if not /^http:\/\/|^\.|^\//.test(id)
                 conf = config.config()
                 if id.indexOf('@') == -1
