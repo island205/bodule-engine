@@ -15,15 +15,15 @@
 				path: '/bodule_modules/',
 				dependencies: {
 					'backbone': '1.0.0',
-					'underscore': '1.5.2'
+					'underscore': '1.5.2',
+					'thenjs': '0.8.2'
 				}
 			}
 		})
-		Bodule.use(['backbone'], function (require) {
-			var Backbone = require('backbone')
-			console.log(Backbone)
+		Bodule.use(['thenjs'], function (require) {
+			var thenjs = require('thenjs')
+			console.log(thenjs)
 		})
-		Bodule.use('./a.js')
 		Bodule.use('/b.js')
 		Bodule.use(['./c.js', './d'], function (require, exports, module) {
 			var c = require('./c.js')

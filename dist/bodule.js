@@ -346,7 +346,11 @@
             id = "" + id + "/" + conf.bodule_modules.dependencies[id] + "/" + id;
           } else {
             _ref = id.split('@'), id = _ref[0], version = _ref[1];
-            id = "" + id + "/" + version + "/" + id;
+            if (version.indexOf('/') > -1) {
+              id = "" + id + "/" + version;
+            } else {
+              id = "" + id + "/" + version + "/" + id;
+            }
           }
           boduleModules = conf.bodule_modules;
           id = boduleModules.cwd + boduleModules.path + id;

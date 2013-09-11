@@ -242,10 +242,11 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
                 else
                     [id, version] = id.split('@')
                     
-                    # backbone@1.0.0
+                    
+                    # backbone@1.0.0/backbone.js -> backbone/1.0.0/backbone.js
                     if version.indexOf('/') > -1
                         id = "#{id}/#{version}"
-                    # backbone@1.0.0/backbone.js
+                    # backbone@1.0.0 -> backbone/1.0.0/backbone.js
                     else
                         id = "#{id}/#{version}/#{id}"
 
@@ -327,7 +328,10 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
                     id = "#{id}/#{conf.bodule_modules.dependencies[id]}/#{id}"
                 else
                     [id, version] = id.split('@')
-                    id = "#{id}/#{version}/#{id}"
+                    if version.indexOf('/') > -1
+                        id = "#{id}/#{version}"
+                    else
+                        id = "#{id}/#{version}/#{id}"
                 boduleModules = conf.bodule_modules
                 id = boduleModules.cwd + boduleModules.path + id
             else
