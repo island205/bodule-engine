@@ -39,7 +39,7 @@ define 'util', ['log'], (require, exports, module)->
     log = require 'log'
 
     head = document.getElementsByTagName('head')[0]
-    
+
     # **util.loadScript**
 
     # Pass a `callback`, when module is loaded, saving the deps and factory of the module  
@@ -49,16 +49,16 @@ define 'util', ['log'], (require, exports, module)->
         node = document.createElement 'script'
         node.type = 'text/javascript'
         node.async = true
-        
+
         # `id` is a absolute URI like `http://example.com/a`
         if not /\.js$/.test id
           id = "#{id}.js"
         node.src = id
         node.onload = ->
             head.removeChild node
-             
+
         head.appendChild node
-    
+
     # **util.cid**
 
     # `cid()` will return `1,2,3,4,5,6...`
@@ -192,10 +192,6 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
         LOADED:     4
         EXECUTING:  5
         EXECUTED:   6
-    
-    # Store the deps and factory of the loading module. When `onload` fire, save to the `Bodule.modules`  
-    # refer as `id`
-    moduleData = null
 
     # **class Module**
     class Module extends EventEmmiter
@@ -241,8 +237,6 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
                     id = "#{id}/#{conf.bodule_modules.dependencies[id]}/#{id}"
                 else
                     [id, version] = id.split('@')
-                    
-                    
                     # backbone@1.0.0/backbone.js -> backbone/1.0.0/backbone.js
                     if version.indexOf('/') > -1
                         id = "#{id}/#{version}"
@@ -298,7 +292,7 @@ define 'module', ['util', 'emmiter', 'path', 'config', 'log'], (require, exports
             @isDepsLoaded()
 
             for module in depModules
-                # If the dep isn't fetched, fetch it  
+                # If the dep isn't fetched, fetch it
                 # if the dep is saved, start load it's deps
                 if module.state < STATUS.FETCHING
                     module.fetch()
@@ -349,8 +343,8 @@ define 'config', ['path', 'util'], (require, exports, module)->
     path = require 'path'
     util = require 'util'
     config =
-        # `config.cwd` is the page location.  
-        # if page's url is `http://coffeescript.org/documentation/docs/rewriter.html`  
+        # `config.cwd` is the page location.
+        # if page's url is `http://coffeescript.org/documentation/docs/rewriter.html`
         # `cwd` is `http://coffeescript.org/documentation/docs/`
         cwd: path.dirname location.href
         path: ''
@@ -385,11 +379,11 @@ define 'bodule', ['module', 'util', 'path', 'config'], (require, exports, module
     Bodule =
         # **Bodule.use**
         use: (deps, factory)->
-            # Treat use factory as a no id module  
+            # Treat use factory as a no id module
             # Give it a random id, let it become a normal module.
             #
-            # If cwd is `http://coffeescript.org/documentation/docs/` so  
-            # id is `http://coffeescript.org/documentation/docs/_use_5`  
+            # If cwd is `http://coffeescript.org/documentation/docs/` so
+            # id is `http://coffeescript.org/documentation/docs/_use_5`
             # 5 is generate by `cid`.
             if util.isString deps
                 id = deps

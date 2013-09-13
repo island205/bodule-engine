@@ -165,7 +165,7 @@
   });
 
   define('module', ['util', 'emmiter', 'path', 'config', 'log'], function(require, exports, module) {
-    var EventEmmiter, Module, STATUS, config, log, moduleData, path, util;
+    var EventEmmiter, Module, STATUS, config, log, path, util;
     util = require('util');
     EventEmmiter = require('emmiter');
     path = require('path');
@@ -180,7 +180,6 @@
       EXECUTING: 5,
       EXECUTED: 6
     };
-    moduleData = null;
     Module = (function(_super) {
       __extends(Module, _super);
 

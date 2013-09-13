@@ -15,19 +15,37 @@
 				path: '/bodule_modules/',
 				dependencies: {
 					'backbone': '1.0.0',
-					'underscore': '1.5.2',
-					'thenjs': '0.8.2'
+					'thenjs': '0.8.2',
+					'async': '0.2.9'
+
 				}
 			}
 		})
-		Bodule.use(['thenjs'], function (require) {
+		Bodule.use(['thenjs', 'backbone'], function (require) {
 			var thenjs = require('thenjs')
+			var backbone = require('backbone')
 			console.log(thenjs)
 		})
 		Bodule.use('/b.js')
-		Bodule.use(['./c.js', './d'], function (require, exports, module) {
+		Bodule.use(['./c.js', './d', 'async'], function (require, exports, module) {
 			var c = require('./c.js')
 			var d = require('./d')
+			var async = require('async')
+			async.series([
+			    function(callback){
+			        // do some stuff ...
+			        callback(null, 'one');
+			    },
+			    function(callback){
+			        // do some more stuff ...
+			        callback(null, 'two');
+			    }
+			],
+			// optional callback
+			function(err, results){
+			    // results is now equal to ['one', 'two']
+			    console.log(results)
+			});
 			console.log(c + d)
 		})
 		Bodule.use(['./e'], function (require) {
