@@ -16,7 +16,11 @@
 				dependencies: {
 					'backbone': '1.0.0',
 					'thenjs': '0.8.2',
-					'async': '0.2.9'
+					'async': '0.2.9',
+					'q': '0.9.7',
+					'semver': '2.1.0',
+					'cookie': '0.1.0',
+					'knockout': '2.3.0'
 
 				}
 			}
@@ -27,10 +31,11 @@
 			console.log(thenjs)
 		})
 		Bodule.use('/b.js')
-		Bodule.use(['./c.js', './d', 'async'], function (require, exports, module) {
+		Bodule.use(['./c.js', './d', 'async', 'cookie'], function (require, exports, module) {
 			var c = require('./c.js')
 			var d = require('./d')
 			var async = require('async')
+			var cookie = require('cookie')
 			async.series([
 			    function(callback){
 			        // do some stuff ...
@@ -48,8 +53,11 @@
 			});
 			console.log(c + d)
 		})
-		Bodule.use(['./e'], function (require) {
+		Bodule.use(['./e', 'q', 'semver', 'knockout'], function (require) {
 			var e = require('./e')
+			var q = require('q')
+			var moment = require('semver')
+			var ko = require('knockout')
 			console.log(e)
 		})
 	</script>
